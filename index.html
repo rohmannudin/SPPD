@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi SPT, SPPD & Laporan Otomatis</title>
+    <!-- Memuat Tailwind CSS untuk styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memuat html2pdf untuk fitur export ke PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --doc-bg: #fff;
+            --doc-text: #000;
+        }
+
+        body {
+            background-color: #e5e7eb; 
+        }
+
+        /* Container Dokumen (Kertas A4 Layouting Screen) - Margin 1.5 cm di semua sisi */
+        .a4-paper {
+            width: 210mm;
+            min-height: 297mm; 
+            padding: 15mm 15mm 15mm 15mm;
+            margin: 10mm auto;
+            border: 1px solid #d3d3d3;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            font-family: 'Times New Roman', Times, serif;
+            color: black;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* Tabel Umum */
+        .table-sppd {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .table-sppd th, .table-sppd td {
+            border: 1px solid black;
+            padding: 4px 6px; 
+            vertical-align: top;
+            font-size: 11pt;
+        }
+
+        .table-belakang {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+        .table-belakang td {
+            border: 1px solid black;
+            padding: 8px;
+            vertical-align: top;
+            width: 50%;
+        }
+
+        /* Helper Classes */
+        .text-center { text-align: center; }
+        .text-justify { text-align: justify; }
+        .font-bold { font-weight: bold; }
+        .underline { text-decoration: underline; }
+        
+        .page-break { page-break-after: always; }
+
+        @page {
+            size: A4 portrait;
+            margin: 0; 
+        }
+
+        /* Perbaikan CSS Print: Memastikan kertas persis di tengah */
+        @media print {
+            html, body { 
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                background-color: white !important; 
+                margin: 0 auto !important; 
+                padding: 0 !important; 
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            #sidebar, #print-btn-container { 
+                display: none !important; 
+            }
+            main {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            #document-wrapper { 
+                display: block !important;
+                width: 100% !important; 
+                min-width: 0 !important; 
+                margin: 0 auto !important; 
+                padding: 0 !important; 
+                background-color: white !important;
+            }
+            .a4-paper {
+                margin: 0 auto !important;
+                padding: 15mm 15mm 15mm 15mm !important;
+                border: none !important;
+                box-shadow: none !important;
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                width: 210mm !important;
+                min-height: 297mm !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important; 
+            }
+            .page-break {
+                display: none !important; 
+            }
+        }
+    </style>
+</head>
+
+<body class="flex flex-col md:flex-row h-screen overflow-hidden">
+
+    <!-- SIDEBAR PANEL -->
+    <aside id="sidebar" class="w-full md:w-1/3 lg:w-1/4 bg-white shadow-lg z-10 flex flex-col h-full overflow-y-auto border-r">
+        <div class="p-5 bg-blue-700 text-white sticky top-0 z-20 shadow-md">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                SPPD & Laporan AI
+            </h2>
+            <p class="text-xs mt-1 text-blue-100">Otomatisasi Dokumen Presisi</p>
+        </div>
+
+        <div class="p-5 space-y-6">
+            <!-- Section 0: Logo -->
+            <div>
+                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">1. Logo Instansi</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Upload Logo Kop Surat</label>
+                        <input type="file" id="in-logo" accept="image/*" class="mt-1 block w-full rounded-md border-gray-300 border p-1 text-sm bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                        <p class="text-[10px] text-gray-500 mt-1">Format gambar transparan (PNG) direkomendasikan.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 1: Instansi -->
+            <div>
+                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">2. Data Instansi & Pejabat</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Nama Kabupaten</label>
+                        <!-- Mengubah default value menjadi lebih generik -->
+                        <input type="text" id="in-kab" value="NUSANTARA" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Nama Kecamatan</label>
+                        <input type="text" id="in-kec" value="MAKMUR JAYA" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Nama Desa</label>
+                        <input type="text" id="in-desa" value="SEJAHTERA" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Alamat Kantor Desa</label>
+                        <input type="text" id="in-alamat" value="Jl. Raya Kemerdekaan No. 45, Kode Pos 12345" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Nama Kepala Desa</label>
+                        <input type="text" id="in-kades" value="DRS. AHMAD HIDAYAT" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm font-bold focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Surat -->
+            <div>
+                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">3. Administrasi Surat</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Nomor Surat (SPT/SPPD)</label>
+                        <input type="text" id="in-noSurat" value="141 / 099 / IX / 2026" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Tanggal Surat Dikeluarkan</label>
+                        <input type="date" id="in-tglSurat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Dasar Pelaksanaan</label>
+                        <textarea id="in-dasar" rows="2" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">Peraturan Desa Sejahtera Nomor 7 Tahun 2026 tentang Anggaran Pendapatan dan Belanja Desa.</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Pegawai -->
+            <div>
+                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">4. Pegawai yang Ditugaskan</h3>
+                <div class="space-y-3 mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
+                    <h4 class="text-xs font-bold text-blue-700">Pegawai 1 (Ketua/Pelapor)</h4>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Nama Lengkap</label>
+                        <input type="text" id="in-namaPgw1" value="HENDRA SAPUTRA, S.Kom." class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Jabatan</label>
+                        <input type="text" id="in-jabatanPgw1" value="Kaur Perencanaan" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                </div>
+                <div class="space-y-3 mb-4 p-3 bg-gray-50 border rounded-md">
+                    <h4 class="text-xs font-bold text-gray-600">Pegawai 2 (Pengikut)</h4>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Nama Lengkap</label>
+                        <input type="text" id="in-namaPgw2" value="SITI AMINAH" placeholder="Kosongkan jika tidak ada" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Jabatan / Umur</label>
+                        <input type="text" id="in-jabatanPgw2" value="Staf Administrasi / 28 Thn" placeholder="Cth: Kasi Kesra / 35 Thn" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                </div>
+                
+                <div class="space-y-3 mb-4 p-3 bg-gray-50 border rounded-md">
+                    <h4 class="text-xs font-bold text-gray-600">Pegawai 3 (Pengikut)</h4>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Nama Lengkap</label>
+                        <input type="text" id="in-namaPgw3" value="" placeholder="Kosongkan jika tidak ada" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Jabatan / Umur</label>
+                        <input type="text" id="in-jabatanPgw3" value="" placeholder="Cth: Kadus / 40 Thn" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Tujuan & Waktu -->
+            <div>
+                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">5. Rincian Perjalanan</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Maksud / Keperluan</label>
+                        <textarea id="in-maksud" rows="2" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">Konsultasi dan Sinkronisasi Data Rencana Pembangunan Jangka Menengah Desa (RPJMDes).</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Tempat Tujuan</label>
+                        <input type="text" id="in-tujuan" value="Dinas Pemberdayaan Masyarakat dan Desa (DPMD)" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Kendaraan yang Digunakan</label>
+                        <input type="text" id="in-kendaraan" value="Mobil Dinas / Pribadi" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Tgl Berangkat</label>
+                            <input type="date" id="in-tglBerangkat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Tgl Kembali</label>
+                            <input type="date" id="in-tglKembali" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Laporan AI -->
+            <div>
+                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">6. Laporan Hasil (Draft AI)</h3>
+                <div class="space-y-3">
+                    <button onclick="generateAIReport()" class="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold py-2 px-4 rounded border border-indigo-300 flex justify-center items-center gap-1 transition-colors">
+                        ✨ Buat Draf Laporan Otomatis
+                    </button>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Isi Laporan</label>
+                        <textarea id="in-laporan" rows="6" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">Silakan klik tombol "Buat Draf Laporan Otomatis" di atas untuk menyusun draft laporan secara cepat berdasarkan data perjalanan dinas yang telah Anda ketik.</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tombol Aksi -->
+            <div class="pt-2 pb-10 space-y-2" id="print-btn-container">
+                <button onclick="window.print()" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded shadow-lg flex justify-center items-center gap-2 transition-colors text-sm">
+                    🖨️ Print Langsung (4 Halaman)
+                </button>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="btn-word" onclick="downloadWord()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded shadow flex flex-col justify-center items-center transition-colors text-[10px]">
+                        <span class="text-sm">📝</span> Word
+                    </button>
+                    <button id="btn-pdf" onclick="downloadPDF()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-2 rounded shadow flex flex-col justify-center items-center transition-colors text-[10px]">
+                        <span class="text-sm">📄</span> PDF
+                    </button>
+                    <button onclick="downloadExcel()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-2 rounded shadow flex flex-col justify-center items-center transition-colors text-[10px]">
+                        <span class="text-sm">📊</span> Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Document Preview Area -->
+    <main class="w-full md:w-2/3 lg:w-3/4 overflow-auto bg-gray-200">
+        
+        <div id="document-wrapper" class="flex flex-col items-center py-10" style="min-width: 230mm;">
+
+            <!-- ==================== HALAMAN 1: SURAT PERINTAH TUGAS ==================== -->
+            <div class="a4-paper mb-10">
+                <!-- Kop Surat menggunakan Tabel agar presisi di Word/Print -->
+                <table style="width: 100%; border-bottom: 3px solid black; margin-bottom: 2px;">
+                    <tr>
+                        <td style="width: 18%; text-align: left; vertical-align: middle; border: none; padding: 0;">
+                            <img class="out-logo" src="" alt="" style="width: 80px; display: none;">
+                        </td>
+                        <td style="width: 64%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                            <h1 style="font-size: 14pt; font-weight: bold; margin: 0;">PEMERINTAH KABUPATEN <span class="out-kab"></span></h1>
+                            <h2 style="font-size: 14pt; font-weight: bold; margin: 0;">KECAMATAN <span class="out-kec"></span></h2>
+                            <h2 style="font-size: 16pt; font-weight: bold; margin: 0;">DESA <span class="out-desa"></span></h2>
+                            <p style="font-size: 10pt; margin: 5px 0 0 0;"><span class="out-alamat"></span></p>
+                        </td>
+                        <td style="width: 18%; text-align: center; border: none; padding: 0;"></td>
+                    </tr>
+                </table>
+                <div style="border-bottom: 1px solid black; margin-bottom: 25px;"></div>
+
+                <!-- Judul Surat -->
+                <div class="text-center" style="margin-bottom: 25px;">
+                    <h3 style="font-size: 14pt; font-weight: bold; text-decoration: underline; margin: 0;">SURAT PERINTAH TUGAS</h3>
+                    <p style="font-size: 12pt;">Nomor: <span class="out-noSurat"></span></p>
+                </div>
+
+                <!-- Isi Surat -->
+                <div style="font-size: 12pt; text-align: justify; line-height: 1.5;">
+                    <table style="width: 100%; margin-bottom: 15px; border: none;">
+                        <tr>
+                            <td style="width: 15%; vertical-align: top; border: none; padding: 2px;"><strong>Dasar</strong></td>
+                            <td style="width: 2%; vertical-align: top; border: none; padding: 2px;">:</td>
+                            <td style="width: 83%; vertical-align: top; border: none; padding: 2px;"><span class="out-dasar"></span></td>
+                        </tr>
+                    </table>
+
+                    <div style="text-align: center; font-weight: bold; margin-top: 15px; margin-bottom: 20px;">
+                        MEMERINTAHKAN :
+                    </div>
+
+                    <table style="width: 100%; margin-bottom: 15px; border: none;">
+                        <tr>
+                            <td style="width: 15%; vertical-align: top; border: none; padding: 2px;"><strong>Kepada</strong></td>
+                            <td style="width: 2%; vertical-align: top; border: none; padding: 2px;">:</td>
+                            <td style="width: 83%; border: none; padding: 2px;">
+                                <ol id="out-spt-pegawai-list" style="margin: 0; padding-left: 20px; list-style-type: decimal;">
+                                    <!-- Item diinjeksi via JS -->
+                                </ol>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table style="width: 100%; margin-bottom: 15px; border: none;">
+                        <tr>
+                            <td style="width: 15%; vertical-align: top; border: none; padding: 2px;"><strong>Untuk</strong></td>
+                            <td style="width: 2%; vertical-align: top; border: none; padding: 2px;">:</td>
+                            <td style="width: 83%; vertical-align: top; border: none; padding: 2px;">
+                                <ol style="margin: 0; padding-left: 20px;">
+                                    <li style="margin-bottom: 5px;">Melaksanakan Perjalanan Dinas dalam rangka: <br> <strong><span class="out-maksud"></span></strong></li>
+                                    <li style="margin-bottom: 5px;">Tempat Tujuan: <strong><span class="out-tujuan"></span></strong></li>
+                                    <li style="margin-bottom: 5px;">Lama Penugasan: <strong><span class="out-lamaHari"></span></strong> hari (Dari tanggal <span class="out-tglBerangkat"></span> s/d <span class="out-tglKembali"></span>)</li>
+                                    <li>Setelah selesai melaksanakan tugas, harap segera menyampaikan laporan tertulis/lisan kepada Kepala Desa.</li>
+                                </ol>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <p style="margin-top: 20px; text-indent: 30px;">
+                        Demikian Surat Perintah Tugas ini dibuat untuk dilaksanakan dengan penuh rasa tanggung jawab.
+                    </p>
+                </div>
+
+                <!-- Tanda Tangan SPT pakai Tabel -->
+                <table style="width: 100%; margin-top: 40px; border: none; page-break-inside: avoid;">
+                    <tr>
+                        <td style="width: 55%; border: none;"></td>
+                        <td style="width: 45%; text-align: center; border: none; padding: 0;">
+                            <p style="margin-bottom: 2px;">Dikeluarkan di : <span class="out-desa-titlecase"></span></p>
+                            <p style="margin-bottom: 2px;">Pada tanggal &nbsp;&nbsp;: <span class="out-tglSurat"></span></p>
+                            <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
+                            
+                            <div style="height: 80px;"></div>
+                            
+                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="page-break"></div>
+
+            <!-- ==================== HALAMAN 2: SURAT PERJALANAN DINAS (SPPD) DEPAN ==================== -->
+            <div class="a4-paper mb-10">
+                <!-- Kop Surat SPPD -->
+                <table style="width: 100%; border-bottom: 1px solid black; margin-bottom: 10px;">
+                    <tr>
+                        <td style="width: 15%; text-align: left; vertical-align: middle; border: none; padding: 0;">
+                            <img class="out-logo" src="" alt="" style="width: 70px; display: none;">
+                        </td>
+                        <td style="width: 70%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                            <h2 style="font-size: 14pt; font-weight: bold; margin: 0;">PEMERINTAH KABUPATEN <span class="out-kab"></span></h2>
+                            <h3 style="font-size: 12pt; font-weight: bold; margin: 0;">DESA <span class="out-desa"></span> KEC. <span class="out-kec"></span></h3>
+                        </td>
+                        <td style="width: 15%; border: none;"></td>
+                    </tr>
+                </table>
+
+                <table style="width: 100%; border: none; font-size: 10pt; margin-bottom: 15px;">
+                    <tr>
+                        <td style="width: 60%; border: none;"></td>
+                        <td style="width: 40%; border: none; padding: 0;">
+                            <table style="width: 100%; border: none;">
+                                <tr><td style="border: none; padding: 2px; width:80px;">Lembar Ke</td><td style="border: none; padding: 2px;">: 1 (Satu) / Asli</td></tr>
+                                <tr><td style="border: none; padding: 2px;">Kode No</td><td style="border: none; padding: 2px;">: -</td></tr>
+                                <tr><td style="border: none; padding: 2px;">Nomor</td><td style="border: none; padding: 2px;">: <span class="out-noSurat"></span></td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="text-center" style="margin-bottom: 15px;">
+                    <h3 style="font-size: 12pt; font-weight: bold; text-decoration: underline; margin: 0;">SURAT PERINTAH PERJALANAN DINAS (SPPD)</h3>
+                </div>
+
+                <table class="table-sppd">
+                    <tr>
+                        <td style="width: 5%; text-align: center;">1.</td>
+                        <td style="width: 40%;">Pejabat Berwenang yang memberi perintah</td>
+                        <td style="width: 55%;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">2.</td>
+                        <td>Nama/NIP Pegawai yang diperintahkan</td>
+                        <td><strong><span class="out-namaPgw"></span></strong><br>NIP. -</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">3.</td>
+                        <td>
+                            a. Pangkat dan Golongan<br>
+                            b. Jabatan / Instansi<br>
+                            c. Tingkat Biaya Perjalanan
+                        </td>
+                        <td>
+                            a. -<br>
+                            b. <span class="out-jabatanPgw"></span> / Desa <span class="out-desa-titlecase"></span><br>
+                            c. -
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">4.</td>
+                        <td>Maksud Perjalanan Dinas</td>
+                        <td style="text-align: justify;"><span class="out-maksud"></span></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">5.</td>
+                        <td>Alat angkutan yang dipergunakan</td>
+                        <td><span class="out-kendaraan"></span></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">6.</td>
+                        <td>
+                            a. Tempat Berangkat<br>
+                            b. Tempat Tujuan
+                        </td>
+                        <td>
+                            a. Kantor Desa <span class="out-desa-titlecase"></span><br>
+                            b. <span class="out-tujuan"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">7.</td>
+                        <td>
+                            a. Lamanya Perjalanan Dinas<br>
+                            b. Tanggal Berangkat<br>
+                            c. Tanggal harus kembali
+                        </td>
+                        <td>
+                            a. <span class="out-lamaHari"></span> Hari<br>
+                            b. <span class="out-tglBerangkat"></span><br>
+                            c. <span class="out-tglKembali"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">8.</td>
+                        <td>Pengikut : Nama<br>
+                            <span id="out-sppd-pengikut-no" style="display:inline-block; margin-top:5px; font-weight: bold;"></span>
+                        </td>
+                        <td>Umur / Jabatan<br>
+                            <span id="out-sppd-pengikut-jabatan" style="display:inline-block; margin-top:5px;"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">9.</td>
+                        <td>Pembebanan Anggaran<br>
+                            a. Instansi<br>
+                            b. Mata Anggaran
+                        </td>
+                        <td><br>
+                            a. APBDesa <span class="out-desa-titlecase"></span><br>
+                            b. -
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">10.</td>
+                        <td>Keterangan lain-lain</td>
+                        <td></td>
+                    </tr>
+                </table>
+
+                <!-- Tanda Tangan SPPD -->
+                <table style="width: 100%; margin-top: 15px; border: none; page-break-inside: avoid;">
+                    <tr>
+                        <td style="width: 55%; border: none;"></td>
+                        <td style="width: 45%; text-align: left; border: none; padding: 0 0 0 15px;">
+                            <p style="margin-bottom: 2px;">Dikeluarkan di : <span class="out-desa-titlecase"></span></p>
+                            <p style="margin-bottom: 2px;">Pada tanggal &nbsp;&nbsp;: <span class="out-tglSurat"></span></p>
+                            <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
+                            <div style="height: 60px;"></div>
+                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="page-break"></div>
+
+            <!-- ==================== HALAMAN 3: SPPD BAGIAN BELAKANG ==================== -->
+            <div class="a4-paper mb-10">
+                <table class="table-belakang">
+                    <!-- Baris 1: I. Berangkat dari... -->
+                    <tr>
+                        <td style="border-top: none; border-left: none; border-bottom: 1px solid black; border-right: 1px solid black;">
+                            <!-- Bagian kiri atas dibiarkan kosong tanpa garis putih agar tak terbaca printer -->
+                        </td>
+                        <td style="border: 1px solid black;">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="width: 30px; border:none; padding:2px;">I.</td>
+                                    <td style="width: 100px; border:none; padding:2px;">Berangkat dari</td>
+                                    <td style="border:none; padding:2px;">: Desa <span class="out-desa-titlecase"></span></td>
+                                </tr>
+                                <tr><td style="border:none;"></td><td style="border:none; padding:2px;">Ke</td><td style="border:none; padding:2px;">: <span class="out-tujuan"></span></td></tr>
+                                <tr><td style="border:none;"></td><td style="border:none; padding:2px;">Pada Tanggal</td><td style="border:none; padding:2px;">: <span class="out-tglBerangkat"></span></td></tr>
+                            </table>
+                            <div style="text-align: center; margin-top: 15px;">
+                                <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
+                                <div style="height: 60px;"></div>
+                                <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Baris 2: II. Tiba di & Berangkat Dari -->
+                    <tr>
+                        <td>
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="width: 30px; border:none; padding:2px;">II.</td>
+                                    <td style="width: 100px; border:none; padding:2px;">Tiba di</td>
+                                    <td style="border:none; padding:2px;">: <span class="out-tujuan"></span></td>
+                                </tr>
+                                <tr><td style="border:none;"></td><td style="border:none; padding:2px;">Pada Tanggal</td><td style="border:none; padding:2px;">: <span class="out-tglBerangkat"></span></td></tr>
+                            </table>
+                            <div style="text-align: center; margin-top: 15px;">
+                                <p style="margin-bottom: 0;">Kepala / Pejabat Berwenang</p>
+                                <div style="height: 60px;"></div>
+                                <p style="margin-bottom: 0;">(......................................................)</p>
+                                <p style="margin-bottom: 0;">NIP.</p>
+                            </div>
+                        </td>
+                        <td>
+                            <table style="width: 100%; border: none;">
+                                <tr><td style="width: 100px; border:none; padding:2px;">Berangkat dari</td><td style="border:none; padding:2px;">: <span class="out-tujuan"></span></td></tr>
+                                <tr><td style="border:none; padding:2px;">Ke</td><td style="border:none; padding:2px;">: Desa <span class="out-desa-titlecase"></span></td></tr>
+                                <tr><td style="border:none; padding:2px;">Pada Tanggal</td><td style="border:none; padding:2px;">: <span class="out-tglKembali"></span></td></tr>
+                            </table>
+                            <div style="text-align: center; margin-top: 15px;">
+                                <p style="margin-bottom: 0;">Kepala / Pejabat Berwenang</p>
+                                <div style="height: 60px;"></div>
+                                <p style="margin-bottom: 0;">(......................................................)</p>
+                                <p style="margin-bottom: 0;">NIP.</p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Baris 3: III. Tiba Kembali -->
+                    <tr>
+                        <td>
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="width: 30px; border:none; padding:2px;">III.</td>
+                                    <td style="width: 100px; border:none; padding:2px;">Tiba di</td>
+                                    <td style="border:none; padding:2px;">: Desa <span class="out-desa-titlecase"></span></td>
+                                </tr>
+                                <tr><td style="border:none;"></td><td style="border:none; padding:2px;">Pada Tanggal</td><td style="border:none; padding:2px;">: <span class="out-tglKembali"></span></td></tr>
+                            </table>
+                            <div style="text-align: center; margin-top: 15px;">
+                                <p style="margin-bottom: 0;"><strong>Mengetahui,<br>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
+                                <div style="height: 60px;"></div>
+                                <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                            </div>
+                        </td>
+                        <td>
+                            <p style="margin:0 0 10px 0; font-size: 9pt; text-align: justify;">Telah diperiksa dengan keterangan bahwa perjalanan dinas tersebut di atas benar dilakukan atas perintahnya dan semata-mata untuk kepentingan jabatan dalam waktu sesingkat-singkatnya.</p>
+                            <div style="text-align: center; margin-top: 15px;">
+                                <p style="margin-bottom: 0;"><strong>Pejabat Pemberi Perintah,<br>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
+                                <div style="height: 60px;"></div>
+                                <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Baris 4: Catatan -->
+                    <tr>
+                        <td colspan="2">
+                            <p style="margin: 0; font-weight: bold;">IV. CATATAN LAIN-LAIN :</p>
+                            <div style="height: 40px;"></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="page-break"></div>
+
+            <!-- ==================== HALAMAN 4: LAPORAN HASIL PERJALANAN DINAS ==================== -->
+            <div class="a4-paper mb-10">
+                <!-- Kop Surat Laporan -->
+                <table style="width: 100%; border-bottom: 3px solid black; margin-bottom: 2px;">
+                    <tr>
+                        <td style="width: 18%; text-align: left; vertical-align: middle; border: none; padding: 0;">
+                            <img class="out-logo" src="" alt="" style="width: 80px; display: none;">
+                        </td>
+                        <td style="width: 64%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                            <h1 style="font-size: 14pt; font-weight: bold; margin: 0;">PEMERINTAH KABUPATEN <span class="out-kab"></span></h1>
+                            <h2 style="font-size: 14pt; font-weight: bold; margin: 0;">KECAMATAN <span class="out-kec"></span></h2>
+                            <h2 style="font-size: 16pt; font-weight: bold; margin: 0;">DESA <span class="out-desa"></span></h2>
+                            <p style="font-size: 10pt; margin: 5px 0 0 0;"><span class="out-alamat"></span></p>
+                        </td>
+                        <td style="width: 18%; text-align: center; border: none; padding: 0;"></td>
+                    </tr>
+                </table>
+                <div style="border-bottom: 1px solid black; margin-bottom: 20px;"></div>
+
+                <div class="text-center" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 14pt; font-weight: bold; text-decoration: underline; margin: 0;">LAPORAN HASIL PERJALANAN DINAS</h3>
+                </div>
+
+                <div style="font-size: 11pt; line-height: 1.5; text-align: justify;">
+                    <ol style="padding-left: 20px; margin: 0;">
+                        <li><strong>Dasar</strong>
+                            <p style="margin-top: 5px; margin-bottom: 10px;">Surat Perintah Tugas Nomor: <span class="out-noSurat"></span> tanggal <span class="out-tglSurat"></span>.</p>
+                        </li>
+                        <li><strong>Maksud dan Tujuan</strong>
+                            <p style="margin-top: 5px; margin-bottom: 10px;"><span class="out-maksud"></span></p>
+                        </li>
+                        <li><strong>Waktu dan Tempat Pelaksanaan</strong>
+                            <table style="width: 100%; margin-top: 5px; margin-bottom: 10px; border: none;">
+                                <tr><td style="width: 150px; padding: 2px 0; border: none;">Tanggal</td><td style="width: 10px; border: none;">:</td><td style="border: none;"><span class="out-tglBerangkat"></span> s.d <span class="out-tglKembali"></span></td></tr>
+                                <tr><td style="padding: 2px 0; border: none;">Tempat Tujuan</td><td style="border: none;">:</td><td style="border: none;"><span class="out-tujuan"></span></td></tr>
+                            </table>
+                        </li>
+                        <li><strong>Pelaksana Tugas</strong>
+                            <ol id="out-lap-pegawai-list" style="margin-top: 5px; margin-bottom: 10px; padding-left: 15px; list-style-type: lower-alpha;">
+                                <!-- Injeksi JS -->
+                            </ol>
+                        </li>
+                        <li><strong>Hasil Kegiatan</strong>
+                            <div id="out-hasil-laporan-container" style="margin-top: 5px; margin-bottom: 10px; white-space: pre-wrap; text-align: justify;">
+                                <!-- Injeksi dari text area Laporan -->
+                            </div>
+                        </li>
+                    </ol>
+
+                    <p style="margin-top: 15px; text-indent: 30px;">
+                        Demikian laporan perjalanan dinas ini dibuat dengan sesungguhnya untuk dapat dipergunakan sebagaimana mestinya.
+                    </p>
+                </div>
+
+                <!-- Tanda Tangan Laporan Tabel Presisi -->
+                <table style="width: 100%; margin-top: 30px; border: none; page-break-inside: avoid;">
+                    <tr>
+                        <td style="width: 50%; text-align: center; border: none; vertical-align: top; padding: 0;">
+                            <p style="margin-bottom: 2px;">Mengetahui,</p>
+                            <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
+                            <div style="height: 80px;"></div>
+                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                        </td>
+                        <td style="width: 50%; text-align: center; border: none; vertical-align: top; padding: 0;">
+                            <p style="margin-bottom: 2px;"><span class="out-desa-titlecase"></span>, <span class="out-tglKembali"></span></p>
+                            <p style="margin-bottom: 0;"><strong>Pelapor,</strong></p>
+                            <div style="height: 80px;"></div>
+                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-namaPgw"></span></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+        </div> <!-- Tutup document-wrapper -->
+    </main>
+
+    <script>
+        // Set default dates on load and initialize document
+        window.onload = function() {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            document.getElementById('in-tglSurat').value = todayStr;
+            document.getElementById('in-tglBerangkat').value = todayStr;
+            document.getElementById('in-tglKembali').value = todayStr;
+            
+            updateDoc();
+        };
+
+        const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        
+        function formatDate(dateString) {
+            if(!dateString) return "-";
+            const d = new Date(dateString);
+            if(isNaN(d.getTime())) return "-";
+            return `${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+        }
+
+        function calculateDays(startDate, endDate) {
+            if(!startDate || !endDate) return 0;
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            return diffDays + 1; // Termasuk hari H
+        }
+
+        function toTitleCase(str) {
+            return str.replace(/\w\S*/g, function(txt) {
+                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+            });
+        }
+
+        // Script untuk menangani input File/Logo secara dinamis
+        document.getElementById('in-logo').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const outLogos = document.querySelectorAll('.out-logo');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    outLogos.forEach(img => {
+                        img.src = e.target.result;
+                        img.style.display = 'inline-block';
+                    });
+                }
+                reader.readAsDataURL(file);
+            } else {
+                outLogos.forEach(img => {
+                    img.src = '';
+                    img.style.display = 'none';
+                });
+            }
+        });
+
+        function generateAIReport() {
+            const maksud = document.getElementById('in-maksud').value;
+            const tujuan = document.getElementById('in-tujuan').value;
+            const desa = document.getElementById('in-desa').value;
+
+            const aiDraft = `Berdasarkan Surat Perintah Tugas dan Surat Perintah Perjalanan Dinas (SPPD) terkait, berikut kami sampaikan laporan hasil perjalanan dinas ke ${tujuan}:
+
+I. PELAKSANAAN KEGIATAN
+1. Waktu dan Tempat: Kegiatan terkait "${maksud}" telah dilaksanakan sesuai jadwal penugasan, bertempat di lingkungan instansi ${tujuan}.
+2. Pihak Terkait: Tim melaksanakan koordinasi dan tatap muka secara langsung dengan pejabat/petugas berwenang di instansi tujuan guna membahas kelengkapan administrasi dan petunjuk teknis pelaksanaan.
+
+II. HASIL YANG DICAPAI (EVALUASI & KOORDINASI)
+1. Verifikasi dan Pemeriksaan: Telah dilakukan pencocokan data serta penyampaian dokumen/laporan administrasi yang dipersyaratkan. Pihak instansi tujuan telah menerima dan melakukan pengecekan secara mendalam sesuai dengan Standar Operasional Prosedur (SOP) yang berlaku.
+2. Arahan Kebijakan Teknis: Mendapatkan pemaparan secara komprehensif terkait regulasi dan aturan teknis terbaru. Hal ini sangat esensial untuk memastikan bahwa tata kelola administrasi dan keuangan di tingkat pemerintahan desa tetap transparan, akuntabel, dan terhindar dari temuan auditor di kemudian hari.
+3. Sinkronisasi Program: Tercapainya kesepahaman terkait langkah-langkah strategis untuk pelaksanaan program kerja agar selaras dengan indikator kinerja dan arah kebijakan pemerintah daerah.
+
+III. TINDAK LANJUT (REKOMENDASI)
+1. Hasil dari arahan dan koordinasi ini akan segera disosialisasikan secara internal kepada jajaran Perangkat Desa ${toTitleCase(desa)} guna dipedomani dan diimplementasikan dalam pelaksanaan tugas pokok sehari-hari.
+2. Kami akan segera menindaklanjuti penyempurnaan dokumen dan laporan pendukung (apabila terdapat instruksi perbaikan) selambat-lambatnya sesuai batas waktu yang telah disepakati bersama.
+
+Demikian laporan perjalanan dinas ini disusun secara faktual, akurat, dan dapat dipertanggungjawabkan kebenarannya, guna dipergunakan sebagai bahan evaluasi serta dokumentasi kelengkapan administrasi pimpinan.`;
+            
+            document.getElementById('in-laporan').value = aiDraft;
+            updateDoc(); 
+            
+            // Animasi kecil pada tombol saat sukses
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "✅ Draf Telah Diperbarui!";
+            btn.classList.add("bg-green-100", "text-green-800", "border-green-400");
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove("bg-green-100", "text-green-800", "border-green-400");
+            }, 2000);
+        }
+
+        function updateDoc() {
+            const kab = document.getElementById('in-kab').value;
+            const kec = document.getElementById('in-kec').value;
+            const desa = document.getElementById('in-desa').value;
+            const alamat = document.getElementById('in-alamat').value;
+            const kades = document.getElementById('in-kades').value;
+            const noSurat = document.getElementById('in-noSurat').value;
+            const tglSurat = document.getElementById('in-tglSurat').value;
+            const dasar = document.getElementById('in-dasar').value;
+            
+            const p1Nama = document.getElementById('in-namaPgw1')?.value || '';
+            const p1Jab = document.getElementById('in-jabatanPgw1')?.value || '';
+            const p2Nama = document.getElementById('in-namaPgw2')?.value || '';
+            const p2Jab = document.getElementById('in-jabatanPgw2')?.value || '';
+            const p3Nama = document.getElementById('in-namaPgw3')?.value || '';
+            const p3Jab = document.getElementById('in-jabatanPgw3')?.value || '';
+
+            const maksud = document.getElementById('in-maksud').value;
+            const tujuan = document.getElementById('in-tujuan').value;
+            const kendaraan = document.getElementById('in-kendaraan').value;
+            const tglBerangkat = document.getElementById('in-tglBerangkat').value;
+            const tglKembali = document.getElementById('in-tglKembali').value;
+            
+            const laporanHasil = document.getElementById('in-laporan').value;
+
+            const tglSuratFormat = formatDate(tglSurat);
+            const tglBerangkatFormat = formatDate(tglBerangkat);
+            const tglKembaliFormat = formatDate(tglKembali);
+            const lamaHari = calculateDays(tglBerangkat, tglKembali);
+            const desaTitleCase = toTitleCase(desa);
+
+            const updateClasses = (className, value) => {
+                const elements = document.getElementsByClassName(className);
+                for(let i=0; i<elements.length; i++) {
+                    elements[i].textContent = value;
+                }
+            };
+
+            updateClasses('out-kab', kab.toUpperCase());
+            updateClasses('out-kec', kec.toUpperCase());
+            updateClasses('out-desa', desa.toUpperCase());
+            updateClasses('out-desa-titlecase', desaTitleCase);
+            updateClasses('out-alamat', alamat);
+            updateClasses('out-kades', kades.toUpperCase());
+            updateClasses('out-noSurat', noSurat);
+            updateClasses('out-tglSurat', tglSuratFormat);
+            updateClasses('out-dasar', dasar);
+            updateClasses('out-maksud', maksud);
+            updateClasses('out-tujuan', tujuan);
+            updateClasses('out-kendaraan', kendaraan);
+            updateClasses('out-tglBerangkat', tglBerangkatFormat);
+            updateClasses('out-tglKembali', tglKembaliFormat);
+            updateClasses('out-lamaHari', lamaHari);
+
+            let sptListHTML = '';
+            let lapListHTML = '';
+            
+            const buildPegawaiRow = (nama, jab) => {
+                if(!nama) return '';
+                return `
+                <li style="margin-bottom: 6px; padding-left: 5px;">
+                    <div style="display: flex;">
+                        <div style="width: 70px;">Nama</div>
+                        <div style="width: 15px;">:</div>
+                        <div style="font-weight: bold;">${nama.toUpperCase()}</div>
+                    </div>
+                    <div style="display: flex;">
+                        <div style="width: 70px;">Jabatan</div>
+                        <div style="width: 15px;">:</div>
+                        <div>${toTitleCase(jab)}</div>
+                    </div>
+                </li>`;
+            };
+
+            sptListHTML += buildPegawaiRow(p1Nama, p1Jab);
+            sptListHTML += buildPegawaiRow(p2Nama, p2Jab);
+            sptListHTML += buildPegawaiRow(p3Nama, p3Jab);
+
+            if(p1Nama) lapListHTML += `<li>${p1Nama.toUpperCase()} (${toTitleCase(p1Jab)})</li>`;
+            if(p2Nama) lapListHTML += `<li>${p2Nama.toUpperCase()} (${toTitleCase(p2Jab)})</li>`;
+            if(p3Nama) lapListHTML += `<li>${p3Nama.toUpperCase()} (${toTitleCase(p3Jab)})</li>`;
+
+            document.getElementById('out-spt-pegawai-list').innerHTML = sptListHTML;
+            document.getElementById('out-lap-pegawai-list').innerHTML = lapListHTML;
+
+            updateClasses('out-namaPgw', p1Nama.toUpperCase());
+            updateClasses('out-jabatanPgw', toTitleCase(p1Jab));
+
+            let pengikutNoHTML = '';
+            let pengikutJabHTML = '';
+            let pengikutCounter = 1;
+
+            if (p2Nama) {
+                pengikutNoHTML += `${pengikutCounter}. ${p2Nama.toUpperCase()}<br>`;
+                pengikutJabHTML += `${toTitleCase(p2Jab)}<br>`;
+                pengikutCounter++;
+            }
+            if (p3Nama) {
+                pengikutNoHTML += `${pengikutCounter}. ${p3Nama.toUpperCase()}<br>`;
+                pengikutJabHTML += `${toTitleCase(p3Jab)}<br>`;
+            }
+
+            if (pengikutCounter === 1) {
+                pengikutNoHTML = "-";
+                pengikutJabHTML = "-";
+            }
+
+            document.getElementById('out-sppd-pengikut-no').innerHTML = pengikutNoHTML;
+            document.getElementById('out-sppd-pengikut-jabatan').innerHTML = pengikutJabHTML;
+            document.getElementById('out-hasil-laporan-container').textContent = laporanHasil;
+        }
+
+        function downloadPDF() {
+            const btn = document.getElementById('btn-pdf');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "⏳ Proses...";
+            
+            const wrapper = document.getElementById('document-wrapper');
+            const originalBg = wrapper.style.backgroundColor;
+            wrapper.style.backgroundColor = 'white';
+
+            const papers = document.querySelectorAll('.a4-paper');
+            papers.forEach(p => {
+                p.style.boxShadow = 'none';
+                p.style.margin = '0';
+                p.style.border = 'none';
+            });
+
+            const opt = {
+                margin:       0,
+                filename:     'Dokumen_SPT_SPPD_Laporan.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(wrapper).save().then(() => {
+                wrapper.style.backgroundColor = originalBg;
+                papers.forEach(p => {
+                    p.style.boxShadow = '';
+                    p.style.margin = '';
+                    p.style.border = '';
+                });
+                btn.innerHTML = originalText;
+            });
+        }
+
+        function downloadExcel() {
+            const wrapper = document.getElementById('document-wrapper');
+            const html = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta charset="utf-8">
+                <style>
+                    body { font-family: 'Times New Roman', serif; color: black; }
+                    table { border-collapse: collapse; width: 100%; }
+                    td, th { border: 1px solid black; padding: 5px; vertical-align: top; }
+                    td[style*="border:none"], td[style*="border: none"] { border: none !important; }
+                </style>
+                </head>
+                <body>${wrapper.innerHTML}</body>
+                </html>
+            `;
+            const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Data_SPT_SPPD_Laporan.xls';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadWord() {
+            const printArea = document.getElementById('document-wrapper').innerHTML;
+            const html = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head>
+                    <meta charset='utf-8'>
+                    <title>Export Word Document</title>
+                    <style>
+                        body { font-family: 'Times New Roman', Times, serif; color: black; }
+                        .a4-paper { 
+                            width: 210mm;
+                            margin: 0 auto; 
+                            padding: 15mm 15mm 15mm 15mm; 
+                            page-break-after: always; 
+                        }
+                        table { border-collapse: collapse; width: 100%; }
+                        .table-sppd td, .table-belakang td { border: 1px solid black; padding: 5px; }
+                        td[style*="border:none"], td[style*="border: none"] { border: none !important; }
+                        .page-break { page-break-after: always; }
+                    </style>
+                </head>
+                <body>
+                    ${printArea}
+                </body>
+                </html>
+            `;
+            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Dokumen_SPT_SPPD_Laporan.doc';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
