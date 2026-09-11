@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi SPT, SPPD & Laporan Otomatis</title>
-    <!-- Memuat Tailwind CSS untuk styling -->
+    <title>Aplikasi SPT, SPPD & Laporan Otomatis - Versi Premium Online</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Memuat html2pdf untuk fitur export ke PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
@@ -67,6 +65,17 @@
         
         .page-break { page-break-after: always; }
 
+        /* Tanda Tangan Draggable */
+        .ttd-img {
+            cursor: grab;
+            position: relative;
+            z-index: 10;
+            -webkit-user-drag: none;
+        }
+        .ttd-img:active {
+            cursor: grabbing;
+        }
+
         @page {
             size: A4 portrait;
             margin: 0; 
@@ -84,7 +93,7 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-            #sidebar, #print-btn-container { 
+            #sidebar, #print-btn-container, #custom-toast { 
                 display: none !important; 
             }
             main {
@@ -123,6 +132,13 @@
 
 <body class="flex flex-col md:flex-row h-screen overflow-hidden">
 
+    <!-- Custom Toast Notification Box -->
+    <div id="custom-toast" class="fixed top-5 right-5 z-50 transform translate-y-[-200%] transition-transform duration-300 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-gray-700 max-w-sm">
+        <span id="toast-icon" class="text-xl">ℹ️</span>
+        <div class="flex-1 text-xs" id="toast-message">Notifikasi sistem aktif.</div>
+        <button onclick="hideToast()" class="text-gray-400 hover:text-white font-bold text-sm">✕</button>
+    </div>
+
     <!-- SIDEBAR PANEL -->
     <aside id="sidebar" class="w-full md:w-1/3 lg:w-1/4 bg-white shadow-lg z-10 flex flex-col h-full overflow-y-auto border-r">
         <div class="p-5 bg-blue-700 text-white sticky top-0 z-20 shadow-md">
@@ -130,12 +146,42 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                SPPD & Laporan AI
+                SPPD Cloud AI <span class="bg-yellow-400 text-yellow-900 text-[10px] px-2 py-0.5 rounded-full ml-1 font-extrabold">PREMIUM</span>
             </h2>
-            <p class="text-xs mt-1 text-blue-100">Otomatisasi Dokumen Presisi</p>
+            <p class="text-xs mt-1 text-blue-100">Sinkronisasi Cloud & Google Spreadsheet</p>
         </div>
 
         <div class="p-5 space-y-6">
+            <!-- Section 0: Cloud & Google Sheets Sync -->
+            <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-300 shadow-sm mb-1">
+                <h3 class="font-bold text-yellow-800 border-b border-yellow-300 pb-2 mb-3 flex items-center justify-between">
+                    <span class="flex items-center gap-1">☁️ Sinkronisasi Spreadsheet</span>
+                    <button onclick="window.toggleSettings()" class="text-xs text-blue-600 underline font-normal hover:text-blue-800">⚙️ Pengaturan URL</button>
+                </h3>
+                
+                <!-- Settings Form for Google Sheet Webhook URL -->
+                <div id="settings-panel" class="hidden mb-3 p-3 bg-white rounded border border-yellow-200 text-xs space-y-2">
+                    <label class="block font-medium text-gray-700">Google Apps Script Webhook URL:</label>
+                    <input type="text" id="in-gsheet-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full p-1.5 border rounded text-xs focus:ring-blue-500 focus:border-blue-500">
+                    <button onclick="window.saveSheetSettings()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-[11px]">Simpan URL Spreadsheet</button>
+                </div>
+
+                <p id="sync-status-text" class="text-[10px] text-yellow-700 mb-3 leading-relaxed">
+                    Status: <span class="font-bold text-green-700">Otomatis Aktif</span>. Inputan Anda akan disimpan otomatis setiap 3.5 detik ke Spreadsheet.
+                </p>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <button id="btn-save-cloud" onclick="window.saveDataToCloud()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-2 rounded shadow transition-colors text-[11px] flex justify-center items-center gap-1">
+                        💾 Simpan Data
+                    </button>
+                    <button id="btn-load-cloud" onclick="window.loadDataFromCloud()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-2 rounded shadow transition-colors text-[11px] flex justify-center items-center gap-1">
+                        🔄 Tarik Terbaru
+                    </button>
+                </div>
+                <button onclick="window.openRiwayat()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded shadow transition-colors text-[11px] flex justify-center items-center gap-1 mt-1">
+                    📋 Buka Riwayat Inputan (Tabel Data)
+                </button>
+            </div>
+
             <!-- Section 0: Logo -->
             <div>
                 <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">1. Logo Instansi</h3>
@@ -143,8 +189,30 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-700">Upload Logo Kop Surat</label>
                         <input type="file" id="in-logo" accept="image/*" class="mt-1 block w-full rounded-md border-gray-300 border p-1 text-sm bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                        <div class="flex gap-2 mt-2">
+                            <button type="button" onclick="hapusLogo()" class="w-full bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1.5 px-2 rounded border border-red-300 shadow-sm transition-colors flex justify-center items-center gap-1">🗑️ Hapus Logo</button>
+                        </div>
                         <p class="text-[10px] text-gray-500 mt-1">Format gambar transparan (PNG) direkomendasikan.</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Section 1b: TTD -->
+            <div>
+                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">1b. Tanda Tangan Kades</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Upload Scan TTD</label>
+                        <input type="file" id="in-ttd" accept="image/*" class="mt-1 block w-full rounded-md border-gray-300 border p-1 text-sm bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="ubahUkuranTtd(10)" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs py-1 px-2 rounded border border-gray-300 shadow-sm transition-colors">➕ Perbesar</button>
+                        <button type="button" onclick="ubahUkuranTtd(-10)" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs py-1 px-2 rounded border border-gray-300 shadow-sm transition-colors">➖ Perkecil</button>
+                        <button type="button" onclick="hapusTtd()" class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded border border-gray-300 shadow-sm transition-colors">🗑️ Hapus</button>
+                    </div>
+                    <p class="text-[10px] text-green-700 mt-1 text-center font-medium bg-green-50 p-1.5 rounded border border-green-200">
+                        💡 <strong>Tip:</strong> Klik & geser (drag) tanda tangan di pratinjau dokumen untuk menyesuaikan posisi.
+                    </p>
                 </div>
             </div>
 
@@ -154,7 +222,6 @@
                 <div class="space-y-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-700">Nama Kabupaten</label>
-                        <!-- Mengubah default value menjadi lebih generik -->
                         <input type="text" id="in-kab" value="NUSANTARA" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
                     </div>
                     <div>
@@ -282,15 +349,15 @@
                 <button onclick="window.print()" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded shadow-lg flex justify-center items-center gap-2 transition-colors text-sm">
                     🖨️ Print Langsung (4 Halaman)
                 </button>
-                <div class="grid grid-cols-3 gap-2">
+                <button id="btn-pdf" onclick="downloadPDF()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded shadow-lg flex justify-center items-center gap-2 transition-colors text-sm">
+                    📄 Download PDF Langsung
+                </button>
+                <div class="grid grid-cols-2 gap-2">
                     <button id="btn-word" onclick="downloadWord()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded shadow flex flex-col justify-center items-center transition-colors text-[10px]">
-                        <span class="text-sm">📝</span> Word
-                    </button>
-                    <button id="btn-pdf" onclick="downloadPDF()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-2 rounded shadow flex flex-col justify-center items-center transition-colors text-[10px]">
-                        <span class="text-sm">📄</span> PDF
+                        <span class="text-sm">📝</span> Export Word
                     </button>
                     <button onclick="downloadExcel()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-2 rounded shadow flex flex-col justify-center items-center transition-colors text-[10px]">
-                        <span class="text-sm">📊</span> Excel
+                        <span class="text-sm">📊</span> Export Excel
                     </button>
                 </div>
             </div>
@@ -304,7 +371,6 @@
 
             <!-- ==================== HALAMAN 1: SURAT PERINTAH TUGAS ==================== -->
             <div class="a4-paper mb-10">
-                <!-- Kop Surat menggunakan Tabel agar presisi di Word/Print -->
                 <table style="width: 100%; border-bottom: 3px solid black; margin-bottom: 2px;">
                     <tr>
                         <td style="width: 18%; text-align: left; vertical-align: middle; border: none; padding: 0;">
@@ -321,13 +387,11 @@
                 </table>
                 <div style="border-bottom: 1px solid black; margin-bottom: 25px;"></div>
 
-                <!-- Judul Surat -->
                 <div class="text-center" style="margin-bottom: 25px;">
                     <h3 style="font-size: 14pt; font-weight: bold; text-decoration: underline; margin: 0;">SURAT PERINTAH TUGAS</h3>
                     <p style="font-size: 12pt;">Nomor: <span class="out-noSurat"></span></p>
                 </div>
 
-                <!-- Isi Surat -->
                 <div style="font-size: 12pt; text-align: justify; line-height: 1.5;">
                     <table style="width: 100%; margin-bottom: 15px; border: none;">
                         <tr>
@@ -347,7 +411,6 @@
                             <td style="width: 2%; vertical-align: top; border: none; padding: 2px;">:</td>
                             <td style="width: 83%; border: none; padding: 2px;">
                                 <ol id="out-spt-pegawai-list" style="margin: 0; padding-left: 20px; list-style-type: decimal;">
-                                    <!-- Item diinjeksi via JS -->
                                 </ol>
                             </td>
                         </tr>
@@ -373,7 +436,6 @@
                     </p>
                 </div>
 
-                <!-- Tanda Tangan SPT pakai Tabel -->
                 <table style="width: 100%; margin-top: 40px; border: none; page-break-inside: avoid;">
                     <tr>
                         <td style="width: 55%; border: none;"></td>
@@ -382,7 +444,9 @@
                             <p style="margin-bottom: 2px;">Pada tanggal &nbsp;&nbsp;: <span class="out-tglSurat"></span></p>
                             <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
                             
-                            <div style="height: 80px;"></div>
+                            <div style="height: 80px; text-align: center; padding-top: 5px; position: relative;">
+                                <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
+                            </div>
                             
                             <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
                         </td>
@@ -393,7 +457,6 @@
 
             <!-- ==================== HALAMAN 2: SURAT PERJALANAN DINAS (SPPD) DEPAN ==================== -->
             <div class="a4-paper mb-10">
-                <!-- Kop Surat SPPD -->
                 <table style="width: 100%; border-bottom: 1px solid black; margin-bottom: 10px;">
                     <tr>
                         <td style="width: 15%; text-align: left; vertical-align: middle; border: none; padding: 0;">
@@ -509,7 +572,6 @@
                     </tr>
                 </table>
 
-                <!-- Tanda Tangan SPPD -->
                 <table style="width: 100%; margin-top: 15px; border: none; page-break-inside: avoid;">
                     <tr>
                         <td style="width: 55%; border: none;"></td>
@@ -517,7 +579,11 @@
                             <p style="margin-bottom: 2px;">Dikeluarkan di : <span class="out-desa-titlecase"></span></p>
                             <p style="margin-bottom: 2px;">Pada tanggal &nbsp;&nbsp;: <span class="out-tglSurat"></span></p>
                             <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
-                            <div style="height: 60px;"></div>
+                            
+                            <div style="height: 60px; text-align: center; padding-top: 5px; position: relative;">
+                                <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
+                            </div>
+                            
                             <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
                         </td>
                     </tr>
@@ -528,10 +594,8 @@
             <!-- ==================== HALAMAN 3: SPPD BAGIAN BELAKANG ==================== -->
             <div class="a4-paper mb-10">
                 <table class="table-belakang">
-                    <!-- Baris 1: I. Berangkat dari... -->
                     <tr>
                         <td style="border-top: none; border-left: none; border-bottom: 1px solid black; border-right: 1px solid black;">
-                            <!-- Bagian kiri atas dibiarkan kosong tanpa garis putih agar tak terbaca printer -->
                         </td>
                         <td style="border: 1px solid black;">
                             <table style="width: 100%; border: none;">
@@ -545,13 +609,16 @@
                             </table>
                             <div style="text-align: center; margin-top: 15px;">
                                 <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
-                                <div style="height: 60px;"></div>
+                                
+                                <div style="height: 60px; text-align: center; padding-top: 5px; position: relative;">
+                                    <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
+                                </div>
+                                
                                 <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
                             </div>
                         </td>
                     </tr>
 
-                    <!-- Baris 2: II. Tiba di & Berangkat Dari -->
                     <tr>
                         <td>
                             <table style="width: 100%; border: none;">
@@ -584,7 +651,6 @@
                         </td>
                     </tr>
 
-                    <!-- Baris 3: III. Tiba Kembali -->
                     <tr>
                         <td>
                             <table style="width: 100%; border: none;">
@@ -597,7 +663,11 @@
                             </table>
                             <div style="text-align: center; margin-top: 15px;">
                                 <p style="margin-bottom: 0;"><strong>Mengetahui,<br>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
-                                <div style="height: 60px;"></div>
+                                
+                                <div style="height: 60px; text-align: center; padding-top: 5px; position: relative;">
+                                    <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
+                                </div>
+                                
                                 <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
                             </div>
                         </td>
@@ -605,13 +675,16 @@
                             <p style="margin:0 0 10px 0; font-size: 9pt; text-align: justify;">Telah diperiksa dengan keterangan bahwa perjalanan dinas tersebut di atas benar dilakukan atas perintahnya dan semata-mata untuk kepentingan jabatan dalam waktu sesingkat-singkatnya.</p>
                             <div style="text-align: center; margin-top: 15px;">
                                 <p style="margin-bottom: 0;"><strong>Pejabat Pemberi Perintah,<br>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
-                                <div style="height: 60px;"></div>
+                                
+                                <div style="height: 60px; text-align: center; padding-top: 5px; position: relative;">
+                                    <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
+                                </div>
+                                
                                 <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
                             </div>
                         </td>
                     </tr>
                     
-                    <!-- Baris 4: Catatan -->
                     <tr>
                         <td colspan="2">
                             <p style="margin: 0; font-weight: bold;">IV. CATATAN LAIN-LAIN :</p>
@@ -624,7 +697,6 @@
 
             <!-- ==================== HALAMAN 4: LAPORAN HASIL PERJALANAN DINAS ==================== -->
             <div class="a4-paper mb-10">
-                <!-- Kop Surat Laporan -->
                 <table style="width: 100%; border-bottom: 3px solid black; margin-bottom: 2px;">
                     <tr>
                         <td style="width: 18%; text-align: left; vertical-align: middle; border: none; padding: 0;">
@@ -661,12 +733,10 @@
                         </li>
                         <li><strong>Pelaksana Tugas</strong>
                             <ol id="out-lap-pegawai-list" style="margin-top: 5px; margin-bottom: 10px; padding-left: 15px; list-style-type: lower-alpha;">
-                                <!-- Injeksi JS -->
                             </ol>
                         </li>
                         <li><strong>Hasil Kegiatan</strong>
                             <div id="out-hasil-laporan-container" style="margin-top: 5px; margin-bottom: 10px; white-space: pre-wrap; text-align: justify;">
-                                <!-- Injeksi dari text area Laporan -->
                             </div>
                         </li>
                     </ol>
@@ -676,13 +746,16 @@
                     </p>
                 </div>
 
-                <!-- Tanda Tangan Laporan Tabel Presisi -->
                 <table style="width: 100%; margin-top: 30px; border: none; page-break-inside: avoid;">
                     <tr>
                         <td style="width: 50%; text-align: center; border: none; vertical-align: top; padding: 0;">
                             <p style="margin-bottom: 2px;">Mengetahui,</p>
                             <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
-                            <div style="height: 80px;"></div>
+                            
+                            <div style="height: 80px; text-align: center; padding-top: 5px; position: relative;">
+                                <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
+                            </div>
+                            
                             <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
                         </td>
                         <td style="width: 50%; text-align: center; border: none; vertical-align: top; padding: 0;">
@@ -695,11 +768,64 @@
                 </table>
             </div>
 
-        </div> <!-- Tutup document-wrapper -->
+        </div>
     </main>
 
+    <!-- Modal Riwayat Inputan Bergaya Spreadsheet -->
+    <div id="modal-riwayat" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-11/12 md:w-4/5 lg:w-3/4 max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-gray-300">
+            <div class="p-4 border-b flex justify-between items-center bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    📊 Database Riwayat & Google Spreadsheet
+                </h3>
+                <button onclick="document.getElementById('modal-riwayat').classList.add('hidden')" class="text-white hover:bg-red-500 p-1.5 px-3 rounded-lg font-bold transition-colors text-sm border border-transparent hover:border-red-400">
+                    ✕ Tutup
+                </button>
+            </div>
+            
+            <div class="p-4 bg-yellow-50 border-b border-yellow-200 text-xs text-yellow-800">
+                💡 <strong>Info:</strong> Data tersinkronisasi otomatis ke Google Spreadsheet. Klik <strong>Tarik ke Form</strong> untuk memuat data lama. <br>
+                ⚠️ <strong>Catatan Hapus:</strong> Untuk menghapus baris di Spreadsheet otomatis dari sini, pastikan kode Webhook Google Apps Script Anda memiliki logika untuk menangkap <code>action="delete"</code> dan <code>timestamp</code>.
+            </div>
+
+            <div class="p-0 overflow-auto flex-1 bg-gray-50">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-gray-200 text-gray-700 sticky top-0 shadow-sm">
+                        <tr>
+                            <th class="border-b border-gray-300 p-3 font-semibold whitespace-nowrap">Waktu Simpan</th>
+                            <th class="border-b border-gray-300 p-3 font-semibold">Pegawai Bertugas</th>
+                            <th class="border-b border-gray-300 p-3 font-semibold">Tujuan</th>
+                            <th class="border-b border-gray-300 p-3 font-semibold whitespace-nowrap">Tgl Keberangkatan</th>
+                            <th class="border-b border-gray-300 p-3 font-semibold text-center w-40">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-riwayat-body" class="bg-white">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Set default dates on load and initialize document
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('custom-toast');
+            const msgEl = document.getElementById('toast-message');
+            const iconEl = document.getElementById('toast-icon');
+            
+            msgEl.textContent = message;
+            iconEl.textContent = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+            
+            toast.classList.remove('translate-y-[-200%]');
+            setTimeout(() => {
+                hideToast();
+            }, 3500);
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('custom-toast');
+            toast.classList.add('translate-y-[-200%]');
+        }
+
         window.onload = function() {
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
@@ -726,7 +852,7 @@
             const end = new Date(endDate);
             const diffTime = Math.abs(end - start);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            return diffDays + 1; // Termasuk hari H
+            return diffDays + 1;
         }
 
         function toTitleCase(str) {
@@ -735,7 +861,6 @@
             });
         }
 
-        // Script untuk menangani input File/Logo secara dinamis
         document.getElementById('in-logo').addEventListener('change', function(event) {
             const file = event.target.files[0];
             const outLogos = document.querySelectorAll('.out-logo');
@@ -750,12 +875,115 @@
                 }
                 reader.readAsDataURL(file);
             } else {
-                outLogos.forEach(img => {
-                    img.src = '';
-                    img.style.display = 'none';
-                });
+                hapusLogo();
             }
         });
+
+        function hapusLogo() {
+            document.getElementById('in-logo').value = '';
+            const outLogos = document.querySelectorAll('.out-logo');
+            outLogos.forEach(img => {
+                img.src = '';
+                img.style.display = 'none';
+            });
+        }
+
+        let ttdCurrentWidth = 120;
+
+        document.getElementById('in-ttd').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const outTtds = document.querySelectorAll('.ttd-img');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    outTtds.forEach(img => {
+                        img.src = e.target.result;
+                        img.style.display = 'inline-block';
+                        img.style.width = ttdCurrentWidth + 'px';
+                    });
+                }
+                reader.readAsDataURL(file);
+            } else {
+                hapusTtd();
+            }
+        });
+
+        function ubahUkuranTtd(delta) {
+            ttdCurrentWidth += delta;
+            if (ttdCurrentWidth < 30) ttdCurrentWidth = 30; 
+            if (ttdCurrentWidth > 250) ttdCurrentWidth = 250; 
+            
+            const outTtds = document.querySelectorAll('.ttd-img');
+            outTtds.forEach(img => {
+                if (img.src) {
+                    img.style.width = ttdCurrentWidth + 'px';
+                }
+            });
+        }
+
+        function hapusTtd() {
+            document.getElementById('in-ttd').value = ''; 
+            const outTtds = document.querySelectorAll('.ttd-img');
+            outTtds.forEach(img => {
+                img.src = '';
+                img.style.display = 'none';
+                img.style.transform = 'translate(0px, 0px)';
+                img.setAttribute('data-x', 0);
+                img.setAttribute('data-y', 0);
+            });
+            ttdCurrentWidth = 120;
+        }
+
+        let activeDragElement = null;
+        let initialX = 0, initialY = 0;
+
+        document.addEventListener('mousedown', dragStart);
+        document.addEventListener('mouseup', dragEnd);
+        document.addEventListener('mousemove', drag);
+
+        document.addEventListener('touchstart', dragStart, {passive: false});
+        document.addEventListener('touchend', dragEnd);
+        document.addEventListener('touchmove', drag, {passive: false});
+
+        function dragStart(e) {
+            if (e.target.classList.contains('ttd-img')) {
+                activeDragElement = e.target;
+                const currentX = parseFloat(activeDragElement.getAttribute('data-x')) || 0;
+                const currentY = parseFloat(activeDragElement.getAttribute('data-y')) || 0;
+
+                if (e.type === "touchstart") {
+                    initialX = e.touches[0].clientX - currentX;
+                    initialY = e.touches[0].clientY - currentY;
+                } else {
+                    initialX = e.clientX - currentX;
+                    initialY = e.clientY - currentY;
+                }
+            }
+        }
+
+        function dragEnd(e) {
+            activeDragElement = null;
+        }
+
+        function drag(e) {
+            if (activeDragElement) {
+                e.preventDefault();
+                let currentX, currentY;
+
+                if (e.type === "touchmove") {
+                    currentX = e.touches[0].clientX - initialX;
+                    currentY = e.touches[0].clientY - initialY;
+                } else {
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                }
+
+                activeDragElement.setAttribute('data-x', currentX);
+                activeDragElement.setAttribute('data-y', currentY);
+                activeDragElement.style.transform = `translate(${currentX}px, ${currentY}px)`;
+            }
+        }
 
         function generateAIReport() {
             const maksud = document.getElementById('in-maksud').value;
@@ -781,16 +1009,7 @@ Demikian laporan perjalanan dinas ini disusun secara faktual, akurat, dan dapat 
             
             document.getElementById('in-laporan').value = aiDraft;
             updateDoc(); 
-            
-            // Animasi kecil pada tombol saat sukses
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = "✅ Draf Telah Diperbarui!";
-            btn.classList.add("bg-green-100", "text-green-800", "border-green-400");
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.classList.remove("bg-green-100", "text-green-800", "border-green-400");
-            }, 2000);
+            showToast("Draf Laporan berhasil dibuat oleh AI!");
         }
 
         function updateDoc() {
@@ -908,7 +1127,7 @@ Demikian laporan perjalanan dinas ini disusun secara faktual, akurat, dan dapat 
         function downloadPDF() {
             const btn = document.getElementById('btn-pdf');
             const originalText = btn.innerHTML;
-            btn.innerHTML = "⏳ Proses...";
+            btn.innerHTML = "⏳ Proses PDF...";
             
             const wrapper = document.getElementById('document-wrapper');
             const originalBg = wrapper.style.backgroundColor;
@@ -937,6 +1156,7 @@ Demikian laporan perjalanan dinas ini disusun secara faktual, akurat, dan dapat 
                     p.style.border = '';
                 });
                 btn.innerHTML = originalText;
+                showToast("File PDF berhasil di-download!");
             });
         }
 
@@ -964,6 +1184,7 @@ Demikian laporan perjalanan dinas ini disusun secara faktual, akurat, dan dapat 
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            showToast("File Excel berhasil di-export!");
         }
 
         function downloadWord() {
@@ -1001,7 +1222,401 @@ Demikian laporan perjalanan dinas ini disusun secara faktual, akurat, dan dapat 
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            showToast("File Word berhasil di-export!");
         }
+    </script>
+
+    <!-- Script Cloud Database & Google Sheets Synchronization -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let app, db, auth, userId;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sppd-app';
+        let isFirebaseReady = false;
+
+        // --- FITUR AUTOSAVE KE SPREADSHEET ---
+        let autoSaveTimer = null;
+        const AUTO_SAVE_DELAY = 3500; // 3.5 detik
+
+        // Mendengarkan setiap input/ketikan pengguna
+        document.querySelectorAll('input, textarea').forEach(element => {
+            element.addEventListener('input', () => {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(() => {
+                    const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
+                    if (sheetUrl && sheetUrl.startsWith('http') && typeof window.saveDataToCloud === 'function') {
+                        window.saveDataToCloud(true); // true menandakan mode penyimpanan otomatis/diam
+                    }
+                }, AUTO_SAVE_DELAY);
+            });
+        });
+
+        window.toggleSettings = function() {
+            const panel = document.getElementById('settings-panel');
+            panel.classList.toggle('hidden');
+        };
+
+        window.saveSheetSettings = function() {
+            const url = document.getElementById('in-gsheet-url').value.trim();
+            localStorage.setItem('custom_gsheet_webhook', url);
+            showToast("URL Google Spreadsheet berhasil disimpan!");
+            window.toggleSettings();
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUrl = localStorage.getItem('custom_gsheet_webhook');
+            if (savedUrl) {
+                document.getElementById('in-gsheet-url').value = savedUrl;
+            }
+        });
+
+        async function initFirebase() {
+            try {
+                if (typeof __firebase_config !== 'undefined') {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    if (typeof __initial_auth_token !== 'undefined') {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    userId = auth.currentUser?.uid;
+                    isFirebaseReady = true;
+                    
+                    await window.loadDataFromCloud(true);
+                }
+            } catch (e) {
+                console.error("Firebase init error:", e);
+            }
+        }
+
+        window.saveDataToCloud = async function(isAuto = false) {
+            const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
+            
+            // Validasi manual klik
+            if (!isAuto) {
+                if (!isFirebaseReady || !userId) {
+                    // Beri izin menyimpan jika ada URL webhook meskipun cloud lokal offline
+                    if (!sheetUrl || !sheetUrl.startsWith('http')) {
+                        showToast("URL Spreadsheet belum diatur!", "error");
+                        return;
+                    }
+                }
+            }
+            
+            const btn = document.getElementById('btn-save-cloud');
+            const originalText = "💾 Simpan Data";
+            if (!isAuto && btn) btn.innerHTML = "⏳ Menyimpan...";
+            
+            const data = {
+                action: "save",
+                kab: document.getElementById('in-kab').value,
+                kec: document.getElementById('in-kec').value,
+                desa: document.getElementById('in-desa').value,
+                alamat: document.getElementById('in-alamat').value,
+                kades: document.getElementById('in-kades').value,
+                noSurat: document.getElementById('in-noSurat').value,
+                tglSurat: document.getElementById('in-tglSurat').value,
+                dasar: document.getElementById('in-dasar').value,
+                p1Nama: document.getElementById('in-namaPgw1').value,
+                p1Jab: document.getElementById('in-jabatanPgw1').value,
+                p2Nama: document.getElementById('in-namaPgw2').value,
+                p2Jab: document.getElementById('in-jabatanPgw2').value,
+                p3Nama: document.getElementById('in-namaPgw3').value,
+                p3Jab: document.getElementById('in-jabatanPgw3').value,
+                maksud: document.getElementById('in-maksud').value,
+                tujuan: document.getElementById('in-tujuan').value,
+                kendaraan: document.getElementById('in-kendaraan').value,
+                tglBerangkat: document.getElementById('in-tglBerangkat').value,
+                tglKembali: document.getElementById('in-tglKembali').value,
+                laporan: document.getElementById('in-laporan').value,
+                timestamp: Date.now()
+            };
+
+            try {
+                // 1. Simpan ke Google Spreadsheet
+                if (sheetUrl && sheetUrl.startsWith('http')) {
+                    fetch(sheetUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    }).catch(err => console.log("Silent sheet request error:", err));
+                }
+
+                // 2. Simpan Backup ke Cloud Firestore
+                if (isFirebaseReady && userId) {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'sppd_data', 'latest');
+                    setDoc(docRef, data).catch(e => console.log(e));
+
+                    if (!isAuto) {
+                        const historyRef = collection(db, 'artifacts', appId, 'users', userId, 'sppd_history');
+                        addDoc(historyRef, data).catch(e => console.log(e));
+                    }
+                }
+
+                if (!isAuto && btn) {
+                    btn.innerHTML = "✅ Tersimpan!";
+                    btn.classList.replace("bg-yellow-500", "bg-green-600");
+                    btn.classList.replace("hover:bg-yellow-600", "hover:bg-green-700");
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.replace("bg-green-600", "bg-yellow-500");
+                        btn.classList.replace("hover:bg-green-700", "hover:bg-yellow-600");
+                    }, 2000);
+                    showToast("Data berhasil disimpan ke Spreadsheet!");
+                }
+            } catch(e) {
+                console.error(e);
+                if (!isAuto && btn) {
+                    btn.innerHTML = "❌ Gagal";
+                    setTimeout(() => btn.innerHTML = originalText, 2000);
+                    showToast("Gagal menyimpan data.", "error");
+                }
+            }
+        };
+
+        window.loadDataFromCloud = async function(isAuto = false) {
+            const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
+            
+            // Izinkan menarik data jika ada URL Spreadsheet MESKIPUN cloud offline
+            if ((!isFirebaseReady || !userId) && (!sheetUrl || !sheetUrl.startsWith('http'))) {
+                return; 
+            }
+            
+            const btn = document.getElementById('btn-load-cloud');
+            const originalText = "🔄 Tarik Terbaru";
+            if (btn && !isAuto) btn.innerHTML = "⏳ Menarik...";
+
+            try {
+                let loadedFromSheet = false;
+                
+                if (sheetUrl && sheetUrl.startsWith('http')) {
+                    try {
+                        // Tambahkan ?action=read agar Google Apps Script tahu ini request GET data
+                        const fetchUrl = new URL(sheetUrl);
+                        fetchUrl.searchParams.append('action', 'read');
+
+                        const response = await fetch(fetchUrl.toString());
+                        const sheetData = await response.json();
+                        
+                        if (Array.isArray(sheetData) && sheetData.length > 0) {
+                            applyDataToForm(sheetData[sheetData.length - 1]);
+                            loadedFromSheet = true;
+                        }
+                    } catch(err) {
+                        console.log("Sheet fetch note:", err);
+                    }
+                }
+
+                if (!loadedFromSheet && isFirebaseReady && userId) {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'sppd_data', 'latest');
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                        applyDataToForm(docSnap.data());
+                    }
+                }
+
+                if (btn && !isAuto) {
+                    btn.innerHTML = "✅ Diperbarui!";
+                    btn.classList.replace("bg-blue-500", "bg-green-600");
+                    btn.classList.replace("hover:bg-blue-600", "hover:bg-green-700");
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.replace("bg-green-600", "bg-blue-500");
+                        btn.classList.replace("hover:bg-green-700", "hover:bg-blue-600");
+                    }, 2000);
+                    showToast("Data berhasil ditarik!");
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        };
+
+        function applyDataToForm(data) {
+            const setVal = (id, val) => { if (document.getElementById(id) && val !== undefined) document.getElementById(id).value = val; };
+            
+            setVal('in-kab', data.kab);
+            setVal('in-kec', data.kec);
+            setVal('in-desa', data.desa);
+            setVal('in-alamat', data.alamat);
+            setVal('in-kades', data.kades);
+            setVal('in-noSurat', data.noSurat);
+            setVal('in-tglSurat', data.tglSurat);
+            setVal('in-dasar', data.dasar);
+            setVal('in-namaPgw1', data.p1Nama);
+            setVal('in-jabatanPgw1', data.p1Jab);
+            setVal('in-namaPgw2', data.p2Nama);
+            setVal('in-jabatanPgw2', data.p2Jab);
+            setVal('in-namaPgw3', data.p3Nama);
+            setVal('in-jabatanPgw3', data.p3Jab);
+            setVal('in-maksud', data.maksud);
+            setVal('in-tujuan', data.tujuan);
+            setVal('in-kendaraan', data.kendaraan);
+            setVal('in-tglBerangkat', data.tglBerangkat);
+            setVal('in-tglKembali', data.tglKembali);
+            setVal('in-laporan', data.laporan);
+
+            window.updateDoc();
+        }
+
+        window.currentHistoryData = [];
+
+        window.openRiwayat = async function() {
+            const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
+            
+            // Boleh buka riwayat dari GSheet meskipun cloud database sedang tidak siap
+            if ((!isFirebaseReady || !userId) && (!sheetUrl || !sheetUrl.startsWith('http'))) {
+                showToast("Cloud Database belum siap dan URL Spreadsheet tidak ada.", "error");
+                return;
+            }
+
+            const modal = document.getElementById('modal-riwayat');
+            const tbody = document.getElementById('table-riwayat-body');
+            
+            modal.classList.remove('hidden');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-gray-600 font-medium animate-pulse">⏳ Mengambil data riwayat dari Spreadsheet...</td></tr>';
+
+            try {
+                let records = [];
+                let fetchSuccess = false;
+                
+                if (sheetUrl && sheetUrl.startsWith('http')) {
+                    try {
+                        // Parameter action=read ditambahkan agar backend tahu kita meminta data
+                        const fetchUrl = new URL(sheetUrl);
+                        fetchUrl.searchParams.append('action', 'read');
+
+                        const response = await fetch(fetchUrl.toString());
+                        const sheetData = await response.json();
+                        
+                        if (Array.isArray(sheetData)) {
+                            records = sheetData;
+                            fetchSuccess = true;
+                        }
+                    } catch(err) {
+                        console.log("Sheet history fetch note:", err);
+                        showToast("Gagal membaca riwayat dari Spreadsheet. Pastikan URL Webhook merespon GET request dengan JSON.", "error");
+                    }
+                }
+
+                if (!fetchSuccess && records.length === 0 && isFirebaseReady && userId) {
+                    const histRef = collection(db, 'artifacts', appId, 'users', userId, 'sppd_history');
+                    const snapshot = await getDocs(histRef);
+                    snapshot.forEach(doc => {
+                        records.push({id: doc.id, ...doc.data()});
+                    });
+                }
+
+                records.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                window.currentHistoryData = records;
+                
+                window.renderRiwayatTable();
+
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-red-500 font-bold">❌ Gagal memuat data riwayat.</td></tr>';
+            }
+        };
+
+        window.renderRiwayatTable = function() {
+            const tbody = document.getElementById('table-riwayat-body');
+            const records = window.currentHistoryData;
+
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-gray-500">Belum ada riwayat tersimpan.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            records.forEach((rec, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-indigo-50 transition-colors';
+                
+                let dateStr = '-';
+                if (rec.timestamp) {
+                    const d = new Date(rec.timestamp);
+                    dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3 text-gray-600">${dateStr}</td>
+                    <td class="p-3 font-medium text-gray-800">${rec.p1Nama || '-'}</td>
+                    <td class="p-3 text-gray-700">${rec.tujuan || '-'}</td>
+                    <td class="p-3 text-gray-600">${rec.tglBerangkat || '-'}</td>
+                    <td class="p-3 text-center flex justify-center gap-1">
+                        <button onclick="window.loadSpecificHistory(${index})" class="bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1.5 rounded shadow-sm text-xs font-bold transition-colors flex-1" title="Tarik">
+                            ⬇️ Tarik
+                        </button>
+                        <button onclick="window.deleteHistory(${index})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1.5 rounded shadow-sm text-xs font-bold transition-colors flex-1" title="Hapus">
+                            🗑️ Hapus
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.deleteHistory = async function(index) {
+            const record = window.currentHistoryData[index];
+            if (!record) return;
+
+            if (!confirm(`Yakin ingin menghapus riwayat perjalanan ke ${record.tujuan || 'tujuan ini'}?\n\nData akan dihapus dari aplikasi dan juga diinstruksikan untuk dihapus dari Google Sheet.`)) {
+                return;
+            }
+
+            const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
+            
+            try {
+                // 1. Instruksi penghapusan ke Spreadsheet
+                if (sheetUrl && sheetUrl.startsWith('http')) {
+                    const payload = {
+                        action: "delete",
+                        timestamp: record.timestamp
+                    };
+                    
+                    fetch(sheetUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    }).catch(err => console.log("Silent sheet delete error:", err));
+                }
+
+                // 2. Hapus dari Cloud Storage Lokal
+                if (isFirebaseReady && userId && record.id) {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'sppd_history', record.id);
+                    await deleteDoc(docRef);
+                }
+
+                // Hapus baris dari layar dan render ulang UI
+                window.currentHistoryData.splice(index, 1);
+                window.renderRiwayatTable();
+                
+                showToast("Data berhasil dihapus!", "success");
+
+            } catch (error) {
+                console.error("Error deleting history:", error);
+                showToast("Terjadi kesalahan saat menghapus data.", "error");
+            }
+        };
+
+        window.loadSpecificHistory = function(index) {
+            const data = window.currentHistoryData[index];
+            if(!data) return;
+
+            applyDataToForm(data);
+            document.getElementById('modal-riwayat').classList.add('hidden');
+            showToast("Data berhasil ditarik ke form!");
+        };
+
+        initFirebase();
     </script>
 </body>
 </html>
