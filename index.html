@@ -167,7 +167,8 @@
                     <h3 class="font-bold text-green-800 border-b border-green-300 pb-2 mb-3 flex justify-between items-center">
                         <span>🌐 Integrasi doPost (Webhook)</span>
                     </h3>
-                    <input type="text" id="in-gsheet-url" placeholder="URL Webhook Apps Script" class="w-full p-2 border rounded text-xs focus:ring-green-500 focus:border-green-500">
+                    <!-- URL DIMASUKKAN LANGSUNG DI ATRIBUT value="URL_DISINI" -->
+                    <input type="text" id="in-gsheet-url" value="https://script.google.com/macros/s/AKfycbwfOCEZ5lyQ0-OYpyAOiWaKPi9RjerA4UkKP4kYc4Meaikjf1Q32dcq4ntyjrABLQfx/exec" placeholder="URL Webhook Apps Script" class="w-full p-2 border rounded text-xs focus:ring-green-500 focus:border-green-500">
                     <p class="text-[10px] text-green-700 mt-2 font-medium">Input otomatis disimpan ke Cloud/Google Sheet.</p>
                 </div>
 
@@ -1033,8 +1034,8 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
 
         window.saveDataToCloud = async function() {
             const url = document.getElementById('in-gsheet-url').value;
-            if (!url) {
-                showToast("Masukkan URL Webhook Google Sheet terlebih dahulu di kolom integrasi.", "error");
+            if (!url || url.includes("GANTI_DENGAN_URL_ANDA")) {
+                showToast("Harap ganti URL bawaan dengan URL Webhook milik Anda.", "error");
                 return;
             }
 
@@ -1091,8 +1092,8 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
             const url = document.getElementById('in-gsheet-url').value;
             const tbody = document.getElementById('table-riwayat-body');
             
-            if (!url) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-red-500 font-medium">Harap isi URL Webhook Apps Script di Pengaturan Terlebih Dahulu.</td></tr>';
+            if (!url || url.includes("GANTI_DENGAN_URL_ANDA")) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-red-500 font-medium">Harap isi atau ganti URL Webhook Apps Script yang valid terlebih dahulu.</td></tr>';
                 return;
             }
 
@@ -1110,7 +1111,7 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
                 
                 renderRiwayatTable();
             } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-red-500 font-medium">❌ Gagal membaca data. Pastikan script Google (doGet) sudah terpasang.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-red-500 font-medium">❌ Gagal membaca data. Pastikan script Google (doGet) sudah terpasang dan URL benar.</td></tr>';
             }
         }
 
