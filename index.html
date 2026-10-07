@@ -3,21 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi SPT, SPPD & Laporan Otomatis - Versi Premium Online</title>
+    <title>Aplikasi SPT & SPPD Otomatis (Auto-Fill, A.N. & Print Ready)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
-        :root {
-            --doc-bg: #fff;
-            --doc-text: #000;
-        }
-
         body {
             background-color: #e5e7eb; 
         }
 
-        /* Container Dokumen (Kertas A4 Layouting Screen) - Margin 1.5 cm di semua sisi */
         .a4-paper {
             width: 210mm;
             min-height: 297mm; 
@@ -32,7 +26,6 @@
             box-sizing: border-box;
         }
 
-        /* Tabel Umum */
         .table-sppd {
             width: 100%;
             border-collapse: collapse;
@@ -57,332 +50,287 @@
             width: 50%;
         }
 
-        /* Helper Classes */
         .text-center { text-align: center; }
         .text-justify { text-align: justify; }
-        .font-bold { font-weight: bold; }
-        .underline { text-decoration: underline; }
-        
-        .page-break { page-break-after: always; }
 
-        /* Tanda Tangan Draggable */
         .ttd-img {
             cursor: grab;
             position: relative;
             z-index: 10;
             -webkit-user-drag: none;
+            transform: translate(0px, 0px);
         }
         .ttd-img:active {
             cursor: grabbing;
         }
 
+        /* 
+        ========================================================
+        PERBAIKAN CSS PRINT UNTUK MENCEGAH ERROR SAAT DICETAK 
+        ========================================================
+        */
         @page {
             size: A4 portrait;
             margin: 0; 
         }
 
-        /* Perbaikan CSS Print: Memastikan kertas persis di tengah */
         @media print {
             html, body { 
-                display: block !important;
-                width: 100% !important;
                 height: auto !important;
-                background-color: white !important; 
-                margin: 0 auto !important; 
-                padding: 0 !important; 
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            #sidebar, #print-btn-container, #custom-toast { 
-                display: none !important; 
-            }
-            main {
+                overflow: visible !important;
                 display: block !important;
-                width: 100% !important;
+                background-color: white !important; 
                 margin: 0 !important;
                 padding: 0 !important;
-                overflow: visible !important;
             }
+            
+            #form-modal, #floating-action-bar, #custom-toast, #modal-riwayat { 
+                display: none !important; 
+            }
+
+            main {
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+                overflow: visible !important;
+                width: 100% !important;
+            }
+
             #document-wrapper { 
                 display: block !important;
                 width: 100% !important; 
-                min-width: 0 !important; 
-                margin: 0 auto !important; 
-                padding: 0 !important; 
-                background-color: white !important;
+                min-width: 0 !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
+
             .a4-paper {
-                margin: 0 auto !important;
-                padding: 15mm 15mm 15mm 15mm !important;
+                margin: 0 !important;
+                padding: 15mm !important; 
                 border: none !important;
                 box-shadow: none !important;
+                width: 100% !important;
                 page-break-after: always !important;
-                page-break-inside: avoid !important;
-                width: 210mm !important;
-                min-height: 297mm !important;
-                box-sizing: border-box !important;
-                overflow: hidden !important; 
             }
-            .page-break {
-                display: none !important; 
+
+            .a4-paper:last-child {
+                page-break-after: auto !important;
             }
         }
     </style>
 </head>
+<body class="bg-gray-200">
 
-<body class="flex flex-col md:flex-row h-screen overflow-hidden">
-
-    <!-- Custom Toast Notification Box -->
-    <div id="custom-toast" class="fixed top-5 right-5 z-50 transform translate-y-[-200%] transition-transform duration-300 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-gray-700 max-w-sm">
+    <!-- TOAST NOTIFICATION -->
+    <div id="custom-toast" class="fixed top-5 right-5 z-[100] transform translate-y-[-200%] transition-transform duration-300 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-gray-700 max-w-sm">
         <span id="toast-icon" class="text-xl">ℹ️</span>
         <div class="flex-1 text-xs" id="toast-message">Notifikasi sistem aktif.</div>
-        <button onclick="hideToast()" class="text-gray-400 hover:text-white font-bold text-sm">✕</button>
     </div>
 
-    <!-- SIDEBAR PANEL -->
-    <aside id="sidebar" class="w-full md:w-1/3 lg:w-1/4 bg-white shadow-lg z-10 flex flex-col h-full overflow-y-auto border-r">
-        <div class="p-5 bg-blue-700 text-white sticky top-0 z-20 shadow-md">
-            <h2 class="text-xl font-bold flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                SPPD Cloud AI <span class="bg-yellow-400 text-yellow-900 text-[10px] px-2 py-0.5 rounded-full ml-1 font-extrabold">PREMIUM</span>
-            </h2>
-            <p class="text-xs mt-1 text-blue-100">Sinkronisasi Cloud & Google Spreadsheet</p>
-        </div>
-
-        <div class="p-5 space-y-6">
-            <!-- Section 0: Cloud & Google Sheets Sync -->
-            <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-300 shadow-sm mb-1">
-                <h3 class="font-bold text-yellow-800 border-b border-yellow-300 pb-2 mb-3 flex items-center justify-between">
-                    <span class="flex items-center gap-1">☁️ Sinkronisasi Spreadsheet</span>
-                    <button onclick="window.toggleSettings()" class="text-xs text-blue-600 underline font-normal hover:text-blue-800">⚙️ Pengaturan URL</button>
-                </h3>
-                
-                <!-- Settings Form for Google Sheet Webhook URL -->
-                <div id="settings-panel" class="hidden mb-3 p-3 bg-white rounded border border-yellow-200 text-xs space-y-2">
-                    <label class="block font-medium text-gray-700">Google Apps Script Webhook URL:</label>
-                    <input type="text" id="in-gsheet-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full p-1.5 border rounded text-xs focus:ring-blue-500 focus:border-blue-500">
-                    <button onclick="window.saveSheetSettings()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-[11px]">Simpan URL Spreadsheet</button>
-                </div>
-
-                <p id="sync-status-text" class="text-[10px] text-yellow-700 mb-3 leading-relaxed">
-                    Status: <span class="font-bold text-green-700">Otomatis Aktif</span>. Inputan Anda akan disimpan otomatis setiap 3.5 detik ke Spreadsheet.
-                </p>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <button id="btn-save-cloud" onclick="window.saveDataToCloud()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-2 rounded shadow transition-colors text-[11px] flex justify-center items-center gap-1">
-                        💾 Simpan Data
-                    </button>
-                    <button id="btn-load-cloud" onclick="window.loadDataFromCloud()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-2 rounded shadow transition-colors text-[11px] flex justify-center items-center gap-1">
-                        🔄 Tarik Terbaru
-                    </button>
-                </div>
-                <button onclick="window.openRiwayat()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded shadow transition-colors text-[11px] flex justify-center items-center gap-1 mt-1">
-                    📋 Buka Riwayat Inputan (Tabel Data)
-                </button>
-            </div>
-
-            <!-- Section 0: Logo -->
-            <div>
-                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">1. Logo Instansi</h3>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Upload Logo Kop Surat</label>
-                        <input type="file" id="in-logo" accept="image/*" class="mt-1 block w-full rounded-md border-gray-300 border p-1 text-sm bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
-                        <div class="flex gap-2 mt-2">
-                            <button type="button" onclick="hapusLogo()" class="w-full bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1.5 px-2 rounded border border-red-300 shadow-sm transition-colors flex justify-center items-center gap-1">🗑️ Hapus Logo</button>
-                        </div>
-                        <p class="text-[10px] text-gray-500 mt-1">Format gambar transparan (PNG) direkomendasikan.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 1b: TTD -->
-            <div>
-                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">1b. Tanda Tangan Kades</h3>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Upload Scan TTD</label>
-                        <input type="file" id="in-ttd" accept="image/*" class="mt-1 block w-full rounded-md border-gray-300 border p-1 text-sm bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="ubahUkuranTtd(10)" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs py-1 px-2 rounded border border-gray-300 shadow-sm transition-colors">➕ Perbesar</button>
-                        <button type="button" onclick="ubahUkuranTtd(-10)" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs py-1 px-2 rounded border border-gray-300 shadow-sm transition-colors">➖ Perkecil</button>
-                        <button type="button" onclick="hapusTtd()" class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded border border-gray-300 shadow-sm transition-colors">🗑️ Hapus</button>
-                    </div>
-                    <p class="text-[10px] text-green-700 mt-1 text-center font-medium bg-green-50 p-1.5 rounded border border-green-200">
-                        💡 <strong>Tip:</strong> Klik & geser (drag) tanda tangan di pratinjau dokumen untuk menyesuaikan posisi.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Section 1: Instansi -->
-            <div>
-                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">2. Data Instansi & Pejabat</h3>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Nama Kabupaten</label>
-                        <input type="text" id="in-kab" value="NUSANTARA" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Nama Kecamatan</label>
-                        <input type="text" id="in-kec" value="MAKMUR JAYA" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Nama Desa</label>
-                        <input type="text" id="in-desa" value="SEJAHTERA" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Alamat Kantor Desa</label>
-                        <input type="text" id="in-alamat" value="Jl. Raya Kemerdekaan No. 45, Kode Pos 12345" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Nama Kepala Desa</label>
-                        <input type="text" id="in-kades" value="DRS. AHMAD HIDAYAT" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm font-bold focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 2: Surat -->
-            <div>
-                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">3. Administrasi Surat</h3>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Nomor Surat (SPT/SPPD)</label>
-                        <input type="text" id="in-noSurat" value="141 / 099 / IX / 2026" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Tanggal Surat Dikeluarkan</label>
-                        <input type="date" id="in-tglSurat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Dasar Pelaksanaan</label>
-                        <textarea id="in-dasar" rows="2" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">Peraturan Desa Sejahtera Nomor 7 Tahun 2026 tentang Anggaran Pendapatan dan Belanja Desa.</textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 3: Pegawai -->
-            <div>
-                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">4. Pegawai yang Ditugaskan</h3>
-                <div class="space-y-3 mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
-                    <h4 class="text-xs font-bold text-blue-700">Pegawai 1 (Ketua/Pelapor)</h4>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Nama Lengkap</label>
-                        <input type="text" id="in-namaPgw1" value="HENDRA SAPUTRA, S.Kom." class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Jabatan</label>
-                        <input type="text" id="in-jabatanPgw1" value="Kaur Perencanaan" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                </div>
-                <div class="space-y-3 mb-4 p-3 bg-gray-50 border rounded-md">
-                    <h4 class="text-xs font-bold text-gray-600">Pegawai 2 (Pengikut)</h4>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Nama Lengkap</label>
-                        <input type="text" id="in-namaPgw2" value="SITI AMINAH" placeholder="Kosongkan jika tidak ada" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Jabatan / Umur</label>
-                        <input type="text" id="in-jabatanPgw2" value="Staf Administrasi / 28 Thn" placeholder="Cth: Kasi Kesra / 35 Thn" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                </div>
-                
-                <div class="space-y-3 mb-4 p-3 bg-gray-50 border rounded-md">
-                    <h4 class="text-xs font-bold text-gray-600">Pegawai 3 (Pengikut)</h4>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Nama Lengkap</label>
-                        <input type="text" id="in-namaPgw3" value="" placeholder="Kosongkan jika tidak ada" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Jabatan / Umur</label>
-                        <input type="text" id="in-jabatanPgw3" value="" placeholder="Cth: Kadus / 40 Thn" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 4: Tujuan & Waktu -->
-            <div>
-                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">5. Rincian Perjalanan</h3>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Maksud / Keperluan</label>
-                        <textarea id="in-maksud" rows="2" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">Konsultasi dan Sinkronisasi Data Rencana Pembangunan Jangka Menengah Desa (RPJMDes).</textarea>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Tempat Tujuan</label>
-                        <input type="text" id="in-tujuan" value="Dinas Pemberdayaan Masyarakat dan Desa (DPMD)" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Kendaraan yang Digunakan</label>
-                        <input type="text" id="in-kendaraan" value="Mobil Dinas / Pribadi" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700">Tgl Berangkat</label>
-                            <input type="date" id="in-tglBerangkat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700">Tgl Kembali</label>
-                            <input type="date" id="in-tglKembali" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 5: Laporan AI -->
-            <div>
-                <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">6. Laporan Hasil (Draft AI)</h3>
-                <div class="space-y-3">
-                    <button onclick="generateAIReport()" class="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold py-2 px-4 rounded border border-indigo-300 flex justify-center items-center gap-1 transition-colors">
-                        ✨ Buat Draf Laporan Otomatis
-                    </button>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Isi Laporan</label>
-                        <textarea id="in-laporan" rows="6" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 focus:ring-blue-500" oninput="updateDoc()">Silakan klik tombol "Buat Draf Laporan Otomatis" di atas untuk menyusun draft laporan secara cepat berdasarkan data perjalanan dinas yang telah Anda ketik.</textarea>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Tombol Aksi -->
-            <div class="pt-2 pb-10 space-y-2" id="print-btn-container">
-                <button onclick="window.print()" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded shadow-lg flex justify-center items-center gap-2 transition-colors text-sm">
-                    🖨️ Print Langsung (4 Halaman)
-                </button>
-                <button id="btn-pdf" onclick="downloadPDF()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded shadow-lg flex justify-center items-center gap-2 transition-colors text-sm">
-                    📄 Download PDF Langsung
-                </button>
-                <div class="grid grid-cols-2 gap-2">
-                    <button id="btn-word" onclick="downloadWord()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded shadow flex flex-col justify-center items-center transition-colors text-[10px]">
-                        <span class="text-sm">📝</span> Export Word
-                    </button>
-                    <button onclick="downloadExcel()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-2 rounded shadow flex flex-col justify-center items-center transition-colors text-[10px]">
-                        <span class="text-sm">📊</span> Export Excel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Document Preview Area -->
-    <main class="w-full md:w-2/3 lg:w-3/4 overflow-auto bg-gray-200">
+    <!-- FORM MODAL (LAYAR PENUH) -->
+    <div id="form-modal" class="fixed inset-0 z-50 bg-gray-100 overflow-y-auto transition-opacity duration-300">
         
-        <div id="document-wrapper" class="flex flex-col items-center py-10" style="min-width: 230mm;">
+        <!-- Header Form -->
+        <div class="p-5 bg-gradient-to-r from-blue-800 to-indigo-900 text-white sticky top-0 z-40 shadow-md flex justify-between items-center border-b-4 border-yellow-400">
+            <div>
+                <h2 class="text-2xl font-bold flex items-center gap-2">
+                    📝 Formulir SPPD Otomatis 
+                    <button id="btn-premium-toggle" onclick="togglePremium()" class="bg-gray-400 hover:bg-yellow-300 text-gray-800 text-[11px] px-3 py-1 rounded-full ml-1 font-extrabold shadow-sm tracking-wider transition-all duration-300">
+                        AKTIFKAN PREMIUM
+                    </button>
+                </h2>
+                <p class="text-sm mt-1 text-blue-200">Data terisi otomatis. Edit jika perlu, lalu Print.</p>
+            </div>
+            <div class="flex gap-2">
+                <button id="btn-manual-save" onclick="saveDataToCloud()" class="hidden bg-yellow-500 hover:bg-yellow-600 text-yellow-900 px-4 py-2 rounded-lg font-bold shadow-lg transition transform hover:scale-105 flex items-center gap-2 border border-yellow-400">
+                    <span>💾 Simpan</span>
+                </button>
+                <button onclick="openRiwayat()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition transform hover:scale-105 flex items-center gap-2 border border-indigo-400">
+                    <span>📊 Riwayat Form</span>
+                </button>
+                <button onclick="closeForm()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition transform hover:scale-105 flex items-center gap-2 border border-green-400">
+                    <span>Lihat Dokumen</span>
+                    <span>➔</span>
+                </button>
+            </div>
+        </div>
 
-            <!-- ==================== HALAMAN 1: SURAT PERINTAH TUGAS ==================== -->
-            <div class="a4-paper mb-10">
+        <!-- Area Input -->
+        <div class="p-6 max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-32">
+            
+            <!-- Kolom 1 -->
+            <div class="space-y-6">
+                <!-- Section Webhook -->
+                <div class="bg-gradient-to-r from-emerald-50 to-green-100 p-4 rounded-lg border border-green-300 shadow-sm">
+                    <h3 class="font-bold text-green-800 border-b border-green-300 pb-2 mb-3 flex justify-between items-center">
+                        <span>🌐 Integrasi doPost (Webhook)</span>
+                    </h3>
+                    <input type="text" id="in-gsheet-url" placeholder="URL Webhook Apps Script" class="w-full p-2 border rounded text-xs focus:ring-green-500 focus:border-green-500">
+                    <p class="text-[10px] text-green-700 mt-2 font-medium">Input otomatis disimpan ke Cloud/Google Sheet.</p>
+                </div>
+
+                <!-- Section Instansi -->
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">1. Data Instansi & Logo</h3>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-blue-50 border border-blue-100 rounded">
+                            <label class="block text-xs font-bold text-blue-800">Upload Logo Instansi</label>
+                            <input type="file" id="in-logo" accept="image/*" class="mt-1 block w-full rounded-md border-gray-300 border p-1 text-sm bg-white focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Kabupaten & Kecamatan</label>
+                            <div class="flex gap-2 mt-1">
+                                <input type="text" id="in-kab" placeholder="Kabupaten" class="block w-1/2 rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                                <input type="text" id="in-kec" placeholder="Kecamatan" class="block w-1/2 rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Nama Desa</label>
+                            <input type="text" id="in-desa" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Alamat Kantor</label>
+                            <input type="text" id="in-alamat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section TTD -->
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-blue-200">
+                    <h3 class="font-semibold text-blue-800 border-b border-blue-200 pb-2 mb-3">2. Penandatangan (Tanda Tangan & A.N.)</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Nama Kepala Desa (Definitif)</label>
+                            <input type="text" id="in-kades" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm font-bold focus:border-blue-500" oninput="updateDoc()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Tipe Penandatangan</label>
+                            <select id="in-ttd-type" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-blue-50 focus:border-blue-500" onchange="toggleAN(); updateDoc();">
+                                <option value="kades">Kepala Desa Langsung</option>
+                                <option value="an">Atas Nama (a.n.) Kepala Desa</option>
+                            </select>
+                        </div>
+                        <div id="an-fields" class="hidden p-3 bg-yellow-50 border border-yellow-300 rounded space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700">Jabatan Penandatangan (Cth: Sekretaris Desa)</label>
+                                <input type="text" id="in-an-jabatan" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700">Nama Penandatangan (A.N.)</label>
+                                <input type="text" id="in-an-nama" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm font-bold focus:border-blue-500" oninput="updateDoc()">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mt-2">Upload Scan TTD (PNG Transparan)</label>
+                            <input type="file" id="in-ttd" accept="image/*" class="mt-1 block w-full rounded-md border-gray-300 border p-1 text-sm bg-gray-50 focus:border-blue-500">
+                            <p class="text-[10px] text-gray-500 mt-1">Bisa digeser (drag & drop) di halaman pratinjau PDF nanti.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kolom 2 -->
+            <div class="space-y-6">
+                <div class="bg-white p-4 rounded-lg shadow-sm border">
+                    <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">3. Administrasi & Perjalanan</h3>
+                    <div class="space-y-3">
+                        <div class="flex gap-2">
+                            <div class="w-1/2">
+                                <label class="block text-xs font-medium text-gray-700">Nomor Surat</label>
+                                <input type="text" id="in-noSurat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                            </div>
+                            <div class="w-1/2">
+                                <label class="block text-xs font-medium text-gray-700">Tanggal Surat</label>
+                                <input type="date" id="in-tglSurat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Dasar Pelaksanaan</label>
+                            <textarea id="in-dasar" rows="2" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Maksud / Keperluan</label>
+                            <textarea id="in-maksud" rows="2" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Tempat Tujuan & Kendaraan</label>
+                            <div class="flex gap-2 mt-1">
+                                <input type="text" id="in-tujuan" placeholder="Tujuan" class="block w-2/3 rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                                <input type="text" id="in-kendaraan" placeholder="Kendaraan" class="block w-1/3 rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="w-1/2">
+                                <label class="block text-xs font-medium text-gray-700">Tgl Berangkat</label>
+                                <input type="date" id="in-tglBerangkat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                            </div>
+                            <div class="w-1/2">
+                                <label class="block text-xs font-medium text-gray-700">Tgl Kembali</label>
+                                <input type="date" id="in-tglKembali" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kolom 3 -->
+            <div class="space-y-6">
+                <!-- Section Pegawai -->
+                <div class="bg-white p-4 rounded-lg shadow-sm border">
+                    <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">4. Pegawai Bertugas</h3>
+                    <div class="space-y-3 mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
+                        <h4 class="text-xs font-bold text-blue-700">Pegawai Utama (Ketua)</h4>
+                        <input type="text" id="in-namaPgw1" placeholder="Nama Lengkap" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 mb-2" oninput="updateDoc()">
+                        <input type="text" id="in-jabatanPgw1" placeholder="Jabatan" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                    </div>
+                    <div class="space-y-3 mb-4 p-3 bg-gray-50 border rounded-md">
+                        <h4 class="text-xs font-bold text-gray-600">Pengikut (Opsional)</h4>
+                        <input type="text" id="in-namaPgw2" placeholder="Nama Pengikut" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 mb-2" oninput="updateDoc()">
+                        <input type="text" id="in-jabatanPgw2" placeholder="Jabatan / Umur" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                    </div>
+                </div>
+
+                <!-- Section Laporan -->
+                <div class="bg-white p-4 rounded-lg shadow-sm border">
+                    <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">5. Hasil Laporan</h3>
+                    <div class="space-y-3">
+                        <button onclick="generateAIReport()" class="w-full bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-bold py-2 px-4 rounded border border-purple-300 transition-colors">
+                            🔄 Generate Draf Teks Laporan
+                        </button>
+                        <textarea id="in-laporan" rows="5" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tombol Bawah (Sticky Bottom) -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] flex justify-center z-40">
+            <button onclick="closeForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-full shadow-lg text-lg flex items-center gap-2 transform transition hover:scale-105">
+                Tampilkan Dokumen Surat 📄
+            </button>
+        </div>
+    </div>
+
+    <!-- AREA PREVIEW DOKUMEN (DI BELAKANG MODAL) -->
+    <main class="w-full h-full pt-8 pb-32 flex flex-col items-center overflow-auto" id="main-scroll">
+        <div id="document-wrapper" class="flex flex-col items-center">
+
+            <!-- HALAMAN 1: SURAT PERINTAH TUGAS -->
+            <div class="a4-paper mb-10 shadow-2xl">
                 <table style="width: 100%; border-bottom: 3px solid black; margin-bottom: 2px;">
                     <tr>
                         <td style="width: 18%; text-align: left; vertical-align: middle; border: none; padding: 0;">
-                            <img class="out-logo" src="" alt="" style="width: 80px; display: none;">
+                            <img class="out-logo" src="" alt="Logo" style="width: 80px; display: none;">
                         </td>
-                        <td style="width: 64%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                        <td style="width: 64%; text-align: center; border: none; padding: 0;">
                             <h1 style="font-size: 14pt; font-weight: bold; margin: 0;">PEMERINTAH KABUPATEN <span class="out-kab"></span></h1>
                             <h2 style="font-size: 14pt; font-weight: bold; margin: 0;">KECAMATAN <span class="out-kec"></span></h2>
                             <h2 style="font-size: 16pt; font-weight: bold; margin: 0;">DESA <span class="out-desa"></span></h2>
                             <p style="font-size: 10pt; margin: 5px 0 0 0;"><span class="out-alamat"></span></p>
                         </td>
-                        <td style="width: 18%; text-align: center; border: none; padding: 0;"></td>
+                        <td style="width: 18%; border: none; padding: 0;"></td>
                     </tr>
                 </table>
                 <div style="border-bottom: 1px solid black; margin-bottom: 25px;"></div>
@@ -410,8 +358,7 @@
                             <td style="width: 15%; vertical-align: top; border: none; padding: 2px;"><strong>Kepada</strong></td>
                             <td style="width: 2%; vertical-align: top; border: none; padding: 2px;">:</td>
                             <td style="width: 83%; border: none; padding: 2px;">
-                                <ol id="out-spt-pegawai-list" style="margin: 0; padding-left: 20px; list-style-type: decimal;">
-                                </ol>
+                                <ol id="out-spt-pegawai-list" style="margin: 0; padding-left: 20px; list-style-type: decimal;"></ol>
                             </td>
                         </tr>
                     </table>
@@ -442,27 +389,26 @@
                         <td style="width: 45%; text-align: center; border: none; padding: 0;">
                             <p style="margin-bottom: 2px;">Dikeluarkan di : <span class="out-desa-titlecase"></span></p>
                             <p style="margin-bottom: 2px;">Pada tanggal &nbsp;&nbsp;: <span class="out-tglSurat"></span></p>
-                            <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
                             
+                            <p style="margin-bottom: 2px;"><strong><span class="out-ttd-prefix"></span></strong></p>
+                            <p style="margin-bottom: 0;"><strong><span class="out-ttd-jabatan"></span></strong></p>
                             <div style="height: 80px; text-align: center; padding-top: 5px; position: relative;">
                                 <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
                             </div>
-                            
-                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-ttd-nama"></span></p>
                         </td>
                     </tr>
                 </table>
             </div>
-            <div class="page-break"></div>
 
-            <!-- ==================== HALAMAN 2: SURAT PERJALANAN DINAS (SPPD) DEPAN ==================== -->
-            <div class="a4-paper mb-10">
+            <!-- HALAMAN 2: SURAT PERJALANAN DINAS (SPPD) DEPAN -->
+            <div class="a4-paper mb-10 shadow-2xl">
                 <table style="width: 100%; border-bottom: 1px solid black; margin-bottom: 10px;">
                     <tr>
                         <td style="width: 15%; text-align: left; vertical-align: middle; border: none; padding: 0;">
-                            <img class="out-logo" src="" alt="" style="width: 70px; display: none;">
+                            <img class="out-logo" src="" alt="Logo" style="width: 70px; display: none;">
                         </td>
-                        <td style="width: 70%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                        <td style="width: 70%; text-align: center; border: none; padding: 0;">
                             <h2 style="font-size: 14pt; font-weight: bold; margin: 0;">PEMERINTAH KABUPATEN <span class="out-kab"></span></h2>
                             <h3 style="font-size: 12pt; font-weight: bold; margin: 0;">DESA <span class="out-desa"></span> KEC. <span class="out-kec"></span></h3>
                         </td>
@@ -490,26 +436,18 @@
                 <table class="table-sppd">
                     <tr>
                         <td style="width: 5%; text-align: center;">1.</td>
-                        <td style="width: 40%;">Pejabat Berwenang yang memberi perintah</td>
-                        <td style="width: 55%;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></td>
+                        <td style="width: 40%;">Pejabat Berwenang</td>
+                        <td style="width: 55%;"><strong><span class="out-ttd-prefix"></span></strong></td>
                     </tr>
                     <tr>
                         <td style="text-align: center;">2.</td>
-                        <td>Nama/NIP Pegawai yang diperintahkan</td>
-                        <td><strong><span class="out-namaPgw"></span></strong><br>NIP. -</td>
+                        <td>Nama Pegawai yang diperintahkan</td>
+                        <td><strong><span class="out-namaPgw"></span></strong></td>
                     </tr>
                     <tr>
                         <td style="text-align: center;">3.</td>
-                        <td>
-                            a. Pangkat dan Golongan<br>
-                            b. Jabatan / Instansi<br>
-                            c. Tingkat Biaya Perjalanan
-                        </td>
-                        <td>
-                            a. -<br>
-                            b. <span class="out-jabatanPgw"></span> / Desa <span class="out-desa-titlecase"></span><br>
-                            c. -
-                        </td>
+                        <td>Jabatan / Instansi</td>
+                        <td><span class="out-jabatanPgw"></span> / Desa <span class="out-desa-titlecase"></span></td>
                     </tr>
                     <tr>
                         <td style="text-align: center;">4.</td>
@@ -523,27 +461,13 @@
                     </tr>
                     <tr>
                         <td style="text-align: center;">6.</td>
-                        <td>
-                            a. Tempat Berangkat<br>
-                            b. Tempat Tujuan
-                        </td>
-                        <td>
-                            a. Kantor Desa <span class="out-desa-titlecase"></span><br>
-                            b. <span class="out-tujuan"></span>
-                        </td>
+                        <td>a. Tempat Berangkat<br>b. Tempat Tujuan</td>
+                        <td>a. Kantor Desa <span class="out-desa-titlecase"></span><br>b. <span class="out-tujuan"></span></td>
                     </tr>
                     <tr>
                         <td style="text-align: center;">7.</td>
-                        <td>
-                            a. Lamanya Perjalanan Dinas<br>
-                            b. Tanggal Berangkat<br>
-                            c. Tanggal harus kembali
-                        </td>
-                        <td>
-                            a. <span class="out-lamaHari"></span> Hari<br>
-                            b. <span class="out-tglBerangkat"></span><br>
-                            c. <span class="out-tglKembali"></span>
-                        </td>
+                        <td>Lamanya Perjalanan<br>Tanggal Berangkat<br>Tanggal harus kembali</td>
+                        <td><span class="out-lamaHari"></span> Hari<br><span class="out-tglBerangkat"></span><br><span class="out-tglKembali"></span></td>
                     </tr>
                     <tr>
                         <td style="text-align: center;">8.</td>
@@ -554,22 +478,6 @@
                             <span id="out-sppd-pengikut-jabatan" style="display:inline-block; margin-top:5px;"></span>
                         </td>
                     </tr>
-                    <tr>
-                        <td style="text-align: center;">9.</td>
-                        <td>Pembebanan Anggaran<br>
-                            a. Instansi<br>
-                            b. Mata Anggaran
-                        </td>
-                        <td><br>
-                            a. APBDesa <span class="out-desa-titlecase"></span><br>
-                            b. -
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="text-align: center;">10.</td>
-                        <td>Keterangan lain-lain</td>
-                        <td></td>
-                    </tr>
                 </table>
 
                 <table style="width: 100%; margin-top: 15px; border: none; page-break-inside: avoid;">
@@ -578,21 +486,20 @@
                         <td style="width: 45%; text-align: left; border: none; padding: 0 0 0 15px;">
                             <p style="margin-bottom: 2px;">Dikeluarkan di : <span class="out-desa-titlecase"></span></p>
                             <p style="margin-bottom: 2px;">Pada tanggal &nbsp;&nbsp;: <span class="out-tglSurat"></span></p>
-                            <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
                             
+                            <p style="margin-bottom: 2px;"><strong><span class="out-ttd-prefix"></span></strong></p>
+                            <p style="margin-bottom: 0;"><strong><span class="out-ttd-jabatan"></span></strong></p>
                             <div style="height: 60px; text-align: center; padding-top: 5px; position: relative;">
                                 <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
                             </div>
-                            
-                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-ttd-nama"></span></p>
                         </td>
                     </tr>
                 </table>
             </div>
-            <div class="page-break"></div>
 
-            <!-- ==================== HALAMAN 3: SPPD BAGIAN BELAKANG ==================== -->
-            <div class="a4-paper mb-10">
+            <!-- HALAMAN 3: SPPD BAGIAN BELAKANG -->
+            <div class="a4-paper mb-10 shadow-2xl">
                 <table class="table-belakang">
                     <tr>
                         <td style="border-top: none; border-left: none; border-bottom: 1px solid black; border-right: 1px solid black;">
@@ -608,13 +515,12 @@
                                 <tr><td style="border:none;"></td><td style="border:none; padding:2px;">Pada Tanggal</td><td style="border:none; padding:2px;">: <span class="out-tglBerangkat"></span></td></tr>
                             </table>
                             <div style="text-align: center; margin-top: 15px;">
-                                <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
-                                
+                                <p style="margin-bottom: 2px;"><strong><span class="out-ttd-prefix"></span></strong></p>
+                                <p style="margin-bottom: 0;"><strong><span class="out-ttd-jabatan"></span></strong></p>
                                 <div style="height: 60px; text-align: center; padding-top: 5px; position: relative;">
                                     <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
                                 </div>
-                                
-                                <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                                <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-ttd-nama"></span></p>
                             </div>
                         </td>
                     </tr>
@@ -662,25 +568,23 @@
                                 <tr><td style="border:none;"></td><td style="border:none; padding:2px;">Pada Tanggal</td><td style="border:none; padding:2px;">: <span class="out-tglKembali"></span></td></tr>
                             </table>
                             <div style="text-align: center; margin-top: 15px;">
-                                <p style="margin-bottom: 0;"><strong>Mengetahui,<br>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
-                                
+                                <p style="margin-bottom: 2px;">Mengetahui,<br><strong><span class="out-ttd-prefix"></span></strong></p>
+                                <p style="margin-bottom: 0;"><strong><span class="out-ttd-jabatan"></span></strong></p>
                                 <div style="height: 60px; text-align: center; padding-top: 5px; position: relative;">
                                     <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
                                 </div>
-                                
-                                <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                                <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-ttd-nama"></span></p>
                             </div>
                         </td>
                         <td>
                             <p style="margin:0 0 10px 0; font-size: 9pt; text-align: justify;">Telah diperiksa dengan keterangan bahwa perjalanan dinas tersebut di atas benar dilakukan atas perintahnya dan semata-mata untuk kepentingan jabatan dalam waktu sesingkat-singkatnya.</p>
                             <div style="text-align: center; margin-top: 15px;">
-                                <p style="margin-bottom: 0;"><strong>Pejabat Pemberi Perintah,<br>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
-                                
+                                <p style="margin-bottom: 2px;">Pejabat Pemberi Perintah,<br><strong><span class="out-ttd-prefix"></span></strong></p>
+                                <p style="margin-bottom: 0;"><strong><span class="out-ttd-jabatan"></span></strong></p>
                                 <div style="height: 60px; text-align: center; padding-top: 5px; position: relative;">
                                     <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
                                 </div>
-                                
-                                <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                                <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-ttd-nama"></span></p>
                             </div>
                         </td>
                     </tr>
@@ -693,22 +597,20 @@
                     </tr>
                 </table>
             </div>
-            <div class="page-break"></div>
 
-            <!-- ==================== HALAMAN 4: LAPORAN HASIL PERJALANAN DINAS ==================== -->
-            <div class="a4-paper mb-10">
+            <!-- HALAMAN 4: LAPORAN HASIL PERJALANAN DINAS -->
+            <div class="a4-paper mb-10 shadow-2xl">
                 <table style="width: 100%; border-bottom: 3px solid black; margin-bottom: 2px;">
                     <tr>
                         <td style="width: 18%; text-align: left; vertical-align: middle; border: none; padding: 0;">
-                            <img class="out-logo" src="" alt="" style="width: 80px; display: none;">
+                            <img class="out-logo" src="" alt="Logo" style="width: 80px; display: none;">
                         </td>
-                        <td style="width: 64%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                        <td style="width: 64%; text-align: center; border: none; padding: 0;">
                             <h1 style="font-size: 14pt; font-weight: bold; margin: 0;">PEMERINTAH KABUPATEN <span class="out-kab"></span></h1>
                             <h2 style="font-size: 14pt; font-weight: bold; margin: 0;">KECAMATAN <span class="out-kec"></span></h2>
                             <h2 style="font-size: 16pt; font-weight: bold; margin: 0;">DESA <span class="out-desa"></span></h2>
-                            <p style="font-size: 10pt; margin: 5px 0 0 0;"><span class="out-alamat"></span></p>
                         </td>
-                        <td style="width: 18%; text-align: center; border: none; padding: 0;"></td>
+                        <td style="width: 18%; border: none; padding: 0;"></td>
                     </tr>
                 </table>
                 <div style="border-bottom: 1px solid black; margin-bottom: 20px;"></div>
@@ -719,44 +621,26 @@
 
                 <div style="font-size: 11pt; line-height: 1.5; text-align: justify;">
                     <ol style="padding-left: 20px; margin: 0;">
-                        <li><strong>Dasar</strong>
-                            <p style="margin-top: 5px; margin-bottom: 10px;">Surat Perintah Tugas Nomor: <span class="out-noSurat"></span> tanggal <span class="out-tglSurat"></span>.</p>
-                        </li>
-                        <li><strong>Maksud dan Tujuan</strong>
-                            <p style="margin-top: 5px; margin-bottom: 10px;"><span class="out-maksud"></span></p>
-                        </li>
-                        <li><strong>Waktu dan Tempat Pelaksanaan</strong>
-                            <table style="width: 100%; margin-top: 5px; margin-bottom: 10px; border: none;">
-                                <tr><td style="width: 150px; padding: 2px 0; border: none;">Tanggal</td><td style="width: 10px; border: none;">:</td><td style="border: none;"><span class="out-tglBerangkat"></span> s.d <span class="out-tglKembali"></span></td></tr>
-                                <tr><td style="padding: 2px 0; border: none;">Tempat Tujuan</td><td style="border: none;">:</td><td style="border: none;"><span class="out-tujuan"></span></td></tr>
-                            </table>
-                        </li>
-                        <li><strong>Pelaksana Tugas</strong>
-                            <ol id="out-lap-pegawai-list" style="margin-top: 5px; margin-bottom: 10px; padding-left: 15px; list-style-type: lower-alpha;">
-                            </ol>
-                        </li>
-                        <li><strong>Hasil Kegiatan</strong>
-                            <div id="out-hasil-laporan-container" style="margin-top: 5px; margin-bottom: 10px; white-space: pre-wrap; text-align: justify;">
-                            </div>
+                        <li><strong>Dasar:</strong> Surat Tugas No: <span class="out-noSurat"></span></li>
+                        <li><strong>Tujuan:</strong> <span class="out-maksud"></span></li>
+                        <li><strong>Waktu:</strong> <span class="out-tglBerangkat"></span> s.d <span class="out-tglKembali"></span></li>
+                        <li><strong>Hasil Kegiatan:</strong>
+                            <div id="out-hasil-laporan-container" style="margin-top: 5px; margin-bottom: 10px; white-space: pre-wrap; text-align: justify;"></div>
                         </li>
                     </ol>
-
-                    <p style="margin-top: 15px; text-indent: 30px;">
-                        Demikian laporan perjalanan dinas ini dibuat dengan sesungguhnya untuk dapat dipergunakan sebagaimana mestinya.
-                    </p>
                 </div>
 
                 <table style="width: 100%; margin-top: 30px; border: none; page-break-inside: avoid;">
                     <tr>
                         <td style="width: 50%; text-align: center; border: none; vertical-align: top; padding: 0;">
                             <p style="margin-bottom: 2px;">Mengetahui,</p>
-                            <p style="margin-bottom: 0;"><strong>Kepala Desa <span class="out-desa-titlecase"></span></strong></p>
                             
+                            <p style="margin-bottom: 2px;"><strong><span class="out-ttd-prefix"></span></strong></p>
+                            <p style="margin-bottom: 0;"><strong><span class="out-ttd-jabatan"></span></strong></p>
                             <div style="height: 80px; text-align: center; padding-top: 5px; position: relative;">
                                 <img class="ttd-img" src="" alt="TTD" style="display: none; width: 120px; height: auto; margin: 0 auto; mix-blend-mode: multiply;">
                             </div>
-                            
-                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-kades"></span></p>
+                            <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;"><span class="out-ttd-nama"></span></p>
                         </td>
                         <td style="width: 50%; text-align: center; border: none; vertical-align: top; padding: 0;">
                             <p style="margin-bottom: 2px;"><span class="out-desa-titlecase"></span>, <span class="out-tglKembali"></span></p>
@@ -771,23 +655,30 @@
         </div>
     </main>
 
-    <!-- Modal Riwayat Inputan Bergaya Spreadsheet -->
-    <div id="modal-riwayat" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex justify-center items-center backdrop-blur-sm">
-        <div class="bg-white rounded-xl w-11/12 md:w-4/5 lg:w-3/4 max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-gray-300">
-            <div class="p-4 border-b flex justify-between items-center bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
+    <!-- FLOATING ACTION BAR SAAT MELIHAT DOKUMEN -->
+    <div id="floating-action-bar" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 bg-opacity-90 backdrop-blur-sm text-white p-2 rounded-full shadow-2xl flex gap-2 z-30">
+        <button onclick="openForm()" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors">
+            ✏️ Edit Data Formulir
+        </button>
+        <button onclick="window.print()" class="bg-green-500 hover:bg-green-400 px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors text-gray-900">
+            🖨️ Cetak (Print)
+        </button>
+        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-500 px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-colors">
+            📄 Unduh PDF
+        </button>
+    </div>
+
+    <!-- MODAL RIWAYAT SPREADSHEET -->
+    <div id="modal-riwayat" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-[60] hidden flex justify-center items-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl w-11/12 md:w-3/4 max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-gray-200">
+            <div class="p-4 border-b flex justify-between items-center bg-gradient-to-r from-indigo-700 to-purple-700 text-white">
                 <h3 class="font-bold text-lg flex items-center gap-2">
-                    📊 Database Riwayat & Google Spreadsheet
+                    📊 Riwayat Database (Google Sheet)
                 </h3>
-                <button onclick="document.getElementById('modal-riwayat').classList.add('hidden')" class="text-white hover:bg-red-500 p-1.5 px-3 rounded-lg font-bold transition-colors text-sm border border-transparent hover:border-red-400">
+                <button onclick="closeRiwayat()" class="text-white hover:bg-red-500 px-3 py-1.5 rounded-lg font-bold transition-colors text-sm border border-transparent hover:border-red-400">
                     ✕ Tutup
                 </button>
             </div>
-            
-            <div class="p-4 bg-yellow-50 border-b border-yellow-200 text-xs text-yellow-800">
-                💡 <strong>Info:</strong> Data tersinkronisasi otomatis ke Google Spreadsheet. Klik <strong>Tarik ke Form</strong> untuk memuat data lama. <br>
-                ⚠️ <strong>Catatan Hapus:</strong> Untuk menghapus baris di Spreadsheet otomatis dari sini, pastikan kode Webhook Google Apps Script Anda memiliki logika untuk menangkap <code>action="delete"</code> dan <code>timestamp</code>.
-            </div>
-
             <div class="p-0 overflow-auto flex-1 bg-gray-50">
                 <table class="w-full text-sm text-left border-collapse">
                     <thead class="bg-gray-200 text-gray-700 sticky top-0 shadow-sm">
@@ -795,46 +686,96 @@
                             <th class="border-b border-gray-300 p-3 font-semibold whitespace-nowrap">Waktu Simpan</th>
                             <th class="border-b border-gray-300 p-3 font-semibold">Pegawai Bertugas</th>
                             <th class="border-b border-gray-300 p-3 font-semibold">Tujuan</th>
-                            <th class="border-b border-gray-300 p-3 font-semibold whitespace-nowrap">Tgl Keberangkatan</th>
-                            <th class="border-b border-gray-300 p-3 font-semibold text-center w-40">Aksi</th>
+                            <th class="border-b border-gray-300 p-3 font-semibold text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="table-riwayat-body" class="bg-white">
+                        <tr><td colspan="4" class="text-center p-8 text-gray-500">Silakan masukkan URL Webhook Apps Script untuk melihat riwayat.</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
+    <!-- SCRIPT UTAMA -->
     <script>
         function showToast(message, type = 'success') {
             const toast = document.getElementById('custom-toast');
-            const msgEl = document.getElementById('toast-message');
-            const iconEl = document.getElementById('toast-icon');
-            
-            msgEl.textContent = message;
-            iconEl.textContent = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
-            
+            document.getElementById('toast-message').textContent = message;
             toast.classList.remove('translate-y-[-200%]');
-            setTimeout(() => {
-                hideToast();
-            }, 3500);
+            setTimeout(hideToast, 3500);
         }
 
         function hideToast() {
-            const toast = document.getElementById('custom-toast');
-            toast.classList.add('translate-y-[-200%]');
+            document.getElementById('custom-toast').classList.add('translate-y-[-200%]');
         }
 
+        function closeForm() {
+            // Sembunyikan form agar dokumen terlihat
+            document.getElementById('form-modal').classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function openForm() {
+            // Tampilkan kembali form modal
+            document.getElementById('form-modal').classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function toggleAN() {
+            const type = document.getElementById('in-ttd-type').value;
+            const anFields = document.getElementById('an-fields');
+            if (type === 'an') {
+                anFields.classList.remove('hidden');
+            } else {
+                anFields.classList.add('hidden');
+            }
+        }
+
+        // INIT DATA KETIKA APLIKASI DIBUKA
         window.onload = function() {
+            const savedUrl = localStorage.getItem('sppd_webhook_url');
+            if(savedUrl && document.getElementById('in-gsheet-url')) {
+                document.getElementById('in-gsheet-url').value = savedUrl;
+            }
+
+            // Dummy Data agar form langsung terisi
+            const dummyData = {
+                'in-kab': 'BANDUNG',
+                'in-kec': 'CICALENGKA',
+                'in-desa': 'CUKUANG',
+                'in-alamat': 'Jl. Raya Desa Cikuang No 10, Kode Pos 40395',
+                'in-kades': 'BAPAK JOKO, S.E.',
+                'in-noSurat': '141/001/IX/2026',
+                'in-dasar': 'Peraturan Desa Cukuang No 5 Tahun 2026 tentang Pembangunan.',
+                'in-namaPgw1': 'BUDI SANTOSO, S.Kom',
+                'in-jabatanPgw1': 'Sekretaris Desa',
+                'in-namaPgw2': 'SITI AMINAH',
+                'in-jabatanPgw2': 'Kaur Keuangan / 30 Thn',
+                'in-maksud': 'Konsultasi Pencairan Dana Desa Tahap 2 di DPMD Kabupaten.',
+                'in-tujuan': 'Kantor DPMD Kabupaten Bandung',
+                'in-kendaraan': 'Mobil Siaga Desa (D 1234 ABC)',
+                'in-an-jabatan': 'Sekretaris Desa',
+                'in-an-nama': 'BUDI SANTOSO, S.Kom'
+            };
+
+            for (const [id, value] of Object.entries(dummyData)) {
+                if(document.getElementById(id)) {
+                    document.getElementById(id).value = value;
+                }
+            }
+
             const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
             const todayStr = today.toISOString().split('T')[0];
-            
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
             document.getElementById('in-tglSurat').value = todayStr;
             document.getElementById('in-tglBerangkat').value = todayStr;
-            document.getElementById('in-tglKembali').value = todayStr;
-            
-            updateDoc();
+            document.getElementById('in-tglKembali').value = tomorrowStr;
+
+            generateAIReport(); 
+            updateDoc();        
         };
 
         const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -851,8 +792,7 @@
             const start = new Date(startDate);
             const end = new Date(endDate);
             const diffTime = Math.abs(end - start);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            return diffDays + 1;
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
         }
 
         function toTitleCase(str) {
@@ -861,10 +801,10 @@
             });
         }
 
+        // LOGIKA UPLOAD LOGO INSTANSI
         document.getElementById('in-logo').addEventListener('change', function(event) {
             const file = event.target.files[0];
             const outLogos = document.querySelectorAll('.out-logo');
-
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -875,73 +815,38 @@
                 }
                 reader.readAsDataURL(file);
             } else {
-                hapusLogo();
+                outLogos.forEach(img => {
+                    img.src = '';
+                    img.style.display = 'none';
+                });
             }
         });
 
-        function hapusLogo() {
-            document.getElementById('in-logo').value = '';
-            const outLogos = document.querySelectorAll('.out-logo');
-            outLogos.forEach(img => {
-                img.src = '';
-                img.style.display = 'none';
-            });
-        }
-
-        let ttdCurrentWidth = 120;
-
+        // LOGIKA UPLOAD TANDA TANGAN
         document.getElementById('in-ttd').addEventListener('change', function(event) {
             const file = event.target.files[0];
             const outTtds = document.querySelectorAll('.ttd-img');
-
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     outTtds.forEach(img => {
                         img.src = e.target.result;
                         img.style.display = 'inline-block';
-                        img.style.width = ttdCurrentWidth + 'px';
+                        img.style.width = '120px';
+                        img.style.transform = 'translate(0px, 0px)'; // reset posisi saat re-upload
                     });
                 }
                 reader.readAsDataURL(file);
-            } else {
-                hapusTtd();
             }
         });
 
-        function ubahUkuranTtd(delta) {
-            ttdCurrentWidth += delta;
-            if (ttdCurrentWidth < 30) ttdCurrentWidth = 30; 
-            if (ttdCurrentWidth > 250) ttdCurrentWidth = 250; 
-            
-            const outTtds = document.querySelectorAll('.ttd-img');
-            outTtds.forEach(img => {
-                if (img.src) {
-                    img.style.width = ttdCurrentWidth + 'px';
-                }
-            });
-        }
-
-        function hapusTtd() {
-            document.getElementById('in-ttd').value = ''; 
-            const outTtds = document.querySelectorAll('.ttd-img');
-            outTtds.forEach(img => {
-                img.src = '';
-                img.style.display = 'none';
-                img.style.transform = 'translate(0px, 0px)';
-                img.setAttribute('data-x', 0);
-                img.setAttribute('data-y', 0);
-            });
-            ttdCurrentWidth = 120;
-        }
-
+        // --- DRAG AND DROP TANDA TANGAN ---
         let activeDragElement = null;
         let initialX = 0, initialY = 0;
 
         document.addEventListener('mousedown', dragStart);
         document.addEventListener('mouseup', dragEnd);
         document.addEventListener('mousemove', drag);
-
         document.addEventListener('touchstart', dragStart, {passive: false});
         document.addEventListener('touchend', dragEnd);
         document.addEventListener('touchmove', drag, {passive: false});
@@ -949,9 +854,16 @@
         function dragStart(e) {
             if (e.target.classList.contains('ttd-img')) {
                 activeDragElement = e.target;
-                const currentX = parseFloat(activeDragElement.getAttribute('data-x')) || 0;
-                const currentY = parseFloat(activeDragElement.getAttribute('data-y')) || 0;
-
+                
+                const transform = activeDragElement.style.transform;
+                const match = transform.match(/translate\(([^px]+)px,\s*([^px]+)px\)/);
+                let currentX = 0, currentY = 0;
+                
+                if (match) {
+                    currentX = parseFloat(match[1]);
+                    currentY = parseFloat(match[2]);
+                }
+                
                 if (e.type === "touchstart") {
                     initialX = e.touches[0].clientX - currentX;
                     initialY = e.touches[0].clientY - currentY;
@@ -978,645 +890,281 @@
                     currentX = e.clientX - initialX;
                     currentY = e.clientY - initialY;
                 }
-
-                activeDragElement.setAttribute('data-x', currentX);
-                activeDragElement.setAttribute('data-y', currentY);
+                
                 activeDragElement.style.transform = `translate(${currentX}px, ${currentY}px)`;
             }
         }
+        // ----------------------------------
 
         function generateAIReport() {
-            const maksud = document.getElementById('in-maksud').value;
-            const tujuan = document.getElementById('in-tujuan').value;
-            const desa = document.getElementById('in-desa').value;
-
-            const aiDraft = `Berdasarkan Surat Perintah Tugas dan Surat Perintah Perjalanan Dinas (SPPD) terkait, berikut kami sampaikan laporan hasil perjalanan dinas ke ${tujuan}:
-
-I. PELAKSANAAN KEGIATAN
-1. Waktu dan Tempat: Kegiatan terkait "${maksud}" telah dilaksanakan sesuai jadwal penugasan, bertempat di lingkungan instansi ${tujuan}.
-2. Pihak Terkait: Tim melaksanakan koordinasi dan tatap muka secara langsung dengan pejabat/petugas berwenang di instansi tujuan guna membahas kelengkapan administrasi dan petunjuk teknis pelaksanaan.
-
-II. HASIL YANG DICAPAI (EVALUASI & KOORDINASI)
-1. Verifikasi dan Pemeriksaan: Telah dilakukan pencocokan data serta penyampaian dokumen/laporan administrasi yang dipersyaratkan. Pihak instansi tujuan telah menerima dan melakukan pengecekan secara mendalam sesuai dengan Standar Operasional Prosedur (SOP) yang berlaku.
-2. Arahan Kebijakan Teknis: Mendapatkan pemaparan secara komprehensif terkait regulasi dan aturan teknis terbaru. Hal ini sangat esensial untuk memastikan bahwa tata kelola administrasi dan keuangan di tingkat pemerintahan desa tetap transparan, akuntabel, dan terhindar dari temuan auditor di kemudian hari.
-3. Sinkronisasi Program: Tercapainya kesepahaman terkait langkah-langkah strategis untuk pelaksanaan program kerja agar selaras dengan indikator kinerja dan arah kebijakan pemerintah daerah.
-
-III. TINDAK LANJUT (REKOMENDASI)
-1. Hasil dari arahan dan koordinasi ini akan segera disosialisasikan secara internal kepada jajaran Perangkat Desa ${toTitleCase(desa)} guna dipedomani dan diimplementasikan dalam pelaksanaan tugas pokok sehari-hari.
-2. Kami akan segera menindaklanjuti penyempurnaan dokumen dan laporan pendukung (apabila terdapat instruksi perbaikan) selambat-lambatnya sesuai batas waktu yang telah disepakati bersama.
-
-Demikian laporan perjalanan dinas ini disusun secara faktual, akurat, dan dapat dipertanggungjawabkan kebenarannya, guna dipergunakan sebagai bahan evaluasi serta dokumentasi kelengkapan administrasi pimpinan.`;
+            const maksud = document.getElementById('in-maksud').value || "[Keperluan Belum Diisi]";
+            const tujuan = document.getElementById('in-tujuan').value || "[Tujuan Belum Diisi]";
+            const tglB = document.getElementById('in-tglBerangkat').value ? formatDate(document.getElementById('in-tglBerangkat').value) : "[Tgl Berangkat]";
             
-            document.getElementById('in-laporan').value = aiDraft;
-            updateDoc(); 
-            showToast("Draf Laporan berhasil dibuat oleh AI!");
+            const draft = `I. PENDAHULUAN
+Perjalanan dinas ini dilaksanakan guna menindaklanjuti instruksi pimpinan terkait "${maksud}", yang bertempat di ${tujuan}. Tujuan utama kegiatan ini adalah untuk memastikan kelancaran administrasi, sinkronisasi data lapangan, serta koordinasi strategis antar instansi.
+
+II. HASIL PELAKSANAAN KEGIATAN
+1. Proses Koordinasi: Tim telah tiba di ${tujuan} pada tanggal ${tglB} dan langsung mengadakan pertemuan serta konsultasi dengan pejabat/staf berwenang di lingkungan instansi terkait. Pertemuan berlangsung secara kondusif dan konstruktif.
+2. Pemeriksaan dan Evaluasi Dokumen: Telah dilakukan serah terima, pencocokan, serta verifikasi kelengkapan berkas fisik maupun pendataan digital. Pihak instansi tujuan menyatakan bahwa seluruh dokumen pendukung yang diserahkan telah memenuhi Standar Operasional Prosedur (SOP) dan regulasi yang diamanatkan.
+3. Arahan Teknis: Tim mendapatkan petunjuk dan arahan strategis dari instansi terkait, khususnya mengenai perbaikan tata kelola, peningkatan efisiensi program kerja, percepatan pelaporan progres kegiatan, serta langkah-langkah mitigasi kendala di lapangan pada periode anggaran mendatang.
+
+III. KESIMPULAN & TINDAK LANJUT
+1. Secara keseluruhan, perjalanan dinas dan agenda koordinasi telah terlaksana dengan sangat baik serta sukses mencapai target capaian kinerja yang telah ditetapkan.
+2. Hasil dari rekomendasi dan arahan teknis tersebut akan segera dilaporkan secara komprehensif kepada Pimpinan (Kepala Desa) dan selanjutnya disosialisasikan kepada jajaran staf perangkat desa terkait untuk segera dipedomani serta diimplementasikan guna peningkatan mutu pelayanan publik.
+
+Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip transparansi, objektif, dan akuntabilitas, untuk dapat dipergunakan sebagaimana perlunya sebagai bahan evaluasi serta kelengkapan administrasi kedinasan.`;
+            
+            document.getElementById('in-laporan').value = draft;
+            updateDoc();
         }
 
         function updateDoc() {
-            const kab = document.getElementById('in-kab').value;
-            const kec = document.getElementById('in-kec').value;
-            const desa = document.getElementById('in-desa').value;
-            const alamat = document.getElementById('in-alamat').value;
-            const kades = document.getElementById('in-kades').value;
-            const noSurat = document.getElementById('in-noSurat').value;
-            const tglSurat = document.getElementById('in-tglSurat').value;
-            const dasar = document.getElementById('in-dasar').value;
-            
-            const p1Nama = document.getElementById('in-namaPgw1')?.value || '';
-            const p1Jab = document.getElementById('in-jabatanPgw1')?.value || '';
-            const p2Nama = document.getElementById('in-namaPgw2')?.value || '';
-            const p2Jab = document.getElementById('in-jabatanPgw2')?.value || '';
-            const p3Nama = document.getElementById('in-namaPgw3')?.value || '';
-            const p3Jab = document.getElementById('in-jabatanPgw3')?.value || '';
-
-            const maksud = document.getElementById('in-maksud').value;
-            const tujuan = document.getElementById('in-tujuan').value;
-            const kendaraan = document.getElementById('in-kendaraan').value;
-            const tglBerangkat = document.getElementById('in-tglBerangkat').value;
-            const tglKembali = document.getElementById('in-tglKembali').value;
-            
-            const laporanHasil = document.getElementById('in-laporan').value;
-
-            const tglSuratFormat = formatDate(tglSurat);
-            const tglBerangkatFormat = formatDate(tglBerangkat);
-            const tglKembaliFormat = formatDate(tglKembali);
-            const lamaHari = calculateDays(tglBerangkat, tglKembali);
-            const desaTitleCase = toTitleCase(desa);
-
-            const updateClasses = (className, value) => {
-                const elements = document.getElementsByClassName(className);
-                for(let i=0; i<elements.length; i++) {
-                    elements[i].textContent = value;
-                }
+            const vals = {
+                'kab': document.getElementById('in-kab').value.toUpperCase(),
+                'kec': document.getElementById('in-kec').value.toUpperCase(),
+                'desa': document.getElementById('in-desa').value.toUpperCase(),
+                'desa-titlecase': toTitleCase(document.getElementById('in-desa').value),
+                'alamat': document.getElementById('in-alamat').value,
+                'noSurat': document.getElementById('in-noSurat').value,
+                'dasar': document.getElementById('in-dasar').value,
+                'maksud': document.getElementById('in-maksud').value,
+                'tujuan': document.getElementById('in-tujuan').value,
+                'kendaraan': document.getElementById('in-kendaraan').value,
+                'namaPgw': document.getElementById('in-namaPgw1').value.toUpperCase(),
+                'jabatanPgw': toTitleCase(document.getElementById('in-jabatanPgw1').value),
             };
 
-            updateClasses('out-kab', kab.toUpperCase());
-            updateClasses('out-kec', kec.toUpperCase());
-            updateClasses('out-desa', desa.toUpperCase());
-            updateClasses('out-desa-titlecase', desaTitleCase);
-            updateClasses('out-alamat', alamat);
-            updateClasses('out-kades', kades.toUpperCase());
-            updateClasses('out-noSurat', noSurat);
-            updateClasses('out-tglSurat', tglSuratFormat);
-            updateClasses('out-dasar', dasar);
-            updateClasses('out-maksud', maksud);
-            updateClasses('out-tujuan', tujuan);
-            updateClasses('out-kendaraan', kendaraan);
-            updateClasses('out-tglBerangkat', tglBerangkatFormat);
-            updateClasses('out-tglKembali', tglKembaliFormat);
-            updateClasses('out-lamaHari', lamaHari);
+            for (const [key, val] of Object.entries(vals)) {
+                const elements = document.getElementsByClassName(`out-${key}`);
+                for(let i=0; i<elements.length; i++) elements[i].textContent = val;
+            }
 
-            let sptListHTML = '';
-            let lapListHTML = '';
+            const tglB = document.getElementById('in-tglBerangkat').value;
+            const tglK = document.getElementById('in-tglKembali').value;
+            const elementsB = document.getElementsByClassName('out-tglBerangkat');
+            const elementsK = document.getElementsByClassName('out-tglKembali');
+            const elementsLama = document.getElementsByClassName('out-lamaHari');
             
-            const buildPegawaiRow = (nama, jab) => {
-                if(!nama) return '';
-                return `
-                <li style="margin-bottom: 6px; padding-left: 5px;">
-                    <div style="display: flex;">
-                        <div style="width: 70px;">Nama</div>
-                        <div style="width: 15px;">:</div>
-                        <div style="font-weight: bold;">${nama.toUpperCase()}</div>
-                    </div>
-                    <div style="display: flex;">
-                        <div style="width: 70px;">Jabatan</div>
-                        <div style="width: 15px;">:</div>
-                        <div>${toTitleCase(jab)}</div>
-                    </div>
-                </li>`;
-            };
+            for(let i=0; i<elementsB.length; i++) elementsB[i].textContent = formatDate(tglB);
+            for(let i=0; i<elementsK.length; i++) elementsK[i].textContent = formatDate(tglK);
+            for(let i=0; i<elementsLama.length; i++) elementsLama[i].textContent = calculateDays(tglB, tglK);
+            
+            const tglS = document.getElementsByClassName('out-tglSurat');
+            for(let i=0; i<tglS.length; i++) tglS[i].textContent = formatDate(document.getElementById('in-tglSurat').value);
 
-            sptListHTML += buildPegawaiRow(p1Nama, p1Jab);
-            sptListHTML += buildPegawaiRow(p2Nama, p2Jab);
-            sptListHTML += buildPegawaiRow(p3Nama, p3Jab);
+            // LOGIKA TANDA TANGAN (KADES ATAU A.N)
+            const ttdType = document.getElementById('in-ttd-type').value;
+            let ttdPrefix = `Kepala Desa ${vals['desa-titlecase']}`;
+            let ttdJabatan = '';
+            let ttdNama = document.getElementById('in-kades').value.toUpperCase();
 
-            if(p1Nama) lapListHTML += `<li>${p1Nama.toUpperCase()} (${toTitleCase(p1Jab)})</li>`;
-            if(p2Nama) lapListHTML += `<li>${p2Nama.toUpperCase()} (${toTitleCase(p2Jab)})</li>`;
-            if(p3Nama) lapListHTML += `<li>${p3Nama.toUpperCase()} (${toTitleCase(p3Jab)})</li>`;
-
-            document.getElementById('out-spt-pegawai-list').innerHTML = sptListHTML;
-            document.getElementById('out-lap-pegawai-list').innerHTML = lapListHTML;
-
-            updateClasses('out-namaPgw', p1Nama.toUpperCase());
-            updateClasses('out-jabatanPgw', toTitleCase(p1Jab));
-
-            let pengikutNoHTML = '';
-            let pengikutJabHTML = '';
-            let pengikutCounter = 1;
-
-            if (p2Nama) {
-                pengikutNoHTML += `${pengikutCounter}. ${p2Nama.toUpperCase()}<br>`;
-                pengikutJabHTML += `${toTitleCase(p2Jab)}<br>`;
-                pengikutCounter++;
-            }
-            if (p3Nama) {
-                pengikutNoHTML += `${pengikutCounter}. ${p3Nama.toUpperCase()}<br>`;
-                pengikutJabHTML += `${toTitleCase(p3Jab)}<br>`;
+            if (ttdType === 'an') {
+                ttdPrefix = `a.n. Kepala Desa ${vals['desa-titlecase']}`;
+                ttdJabatan = document.getElementById('in-an-jabatan').value;
+                ttdNama = document.getElementById('in-an-nama').value.toUpperCase();
             }
 
-            if (pengikutCounter === 1) {
-                pengikutNoHTML = "-";
-                pengikutJabHTML = "-";
+            const elPrefix = document.getElementsByClassName('out-ttd-prefix');
+            const elJabatan = document.getElementsByClassName('out-ttd-jabatan');
+            const elNama = document.getElementsByClassName('out-ttd-nama');
+
+            for(let i=0; i<elPrefix.length; i++) elPrefix[i].textContent = ttdPrefix;
+            for(let i=0; i<elNama.length; i++) elNama[i].textContent = ttdNama;
+            for(let i=0; i<elJabatan.length; i++) {
+                elJabatan[i].textContent = ttdJabatan;
+                elJabatan[i].style.display = ttdJabatan ? 'block' : 'none';
             }
 
-            document.getElementById('out-sppd-pengikut-no').innerHTML = pengikutNoHTML;
-            document.getElementById('out-sppd-pengikut-jabatan').innerHTML = pengikutJabHTML;
-            document.getElementById('out-hasil-laporan-container').textContent = laporanHasil;
+            const p2N = document.getElementById('in-namaPgw2').value;
+            const p2J = document.getElementById('in-jabatanPgw2').value;
+            
+            let pengikutNo = p2N ? `1. ${p2N.toUpperCase()}` : "-";
+            let pengikutJab = p2N ? toTitleCase(p2J) : "-";
+            
+            document.getElementById('out-sppd-pengikut-no').innerHTML = pengikutNo;
+            document.getElementById('out-sppd-pengikut-jabatan').innerHTML = pengikutJab;
+
+            let sptList = `<li><div style="display:flex"><div style="width:70px">Nama</div><div style="width:15px">:</div><b>${vals.namaPgw}</b></div>
+                           <div style="display:flex"><div style="width:70px">Jabatan</div><div style="width:15px">:</div><div>${vals.jabatanPgw}</div></div></li>`;
+            if (p2N) {
+                sptList += `<li><div style="display:flex"><div style="width:70px">Nama</div><div style="width:15px">:</div><b>${p2N.toUpperCase()}</b></div>
+                           <div style="display:flex"><div style="width:70px">Jabatan</div><div style="width:15px">:</div><div>${toTitleCase(p2J)}</div></div></li>`;
+            }
+            document.getElementById('out-spt-pegawai-list').innerHTML = sptList;
+            
+            document.getElementById('out-hasil-laporan-container').textContent = document.getElementById('in-laporan').value;
         }
 
         function downloadPDF() {
-            const btn = document.getElementById('btn-pdf');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = "⏳ Proses PDF...";
-            
             const wrapper = document.getElementById('document-wrapper');
-            const originalBg = wrapper.style.backgroundColor;
-            wrapper.style.backgroundColor = 'white';
-
-            const papers = document.querySelectorAll('.a4-paper');
-            papers.forEach(p => {
-                p.style.boxShadow = 'none';
-                p.style.margin = '0';
-                p.style.border = 'none';
-            });
-
             const opt = {
-                margin:       0,
-                filename:     'Dokumen_SPT_SPPD_Laporan.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin: 0,
+                filename: 'SPPD_Otomatis.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-
-            html2pdf().set(opt).from(wrapper).save().then(() => {
-                wrapper.style.backgroundColor = originalBg;
-                papers.forEach(p => {
-                    p.style.boxShadow = '';
-                    p.style.margin = '';
-                    p.style.border = '';
-                });
-                btn.innerHTML = originalText;
-                showToast("File PDF berhasil di-download!");
-            });
+            html2pdf().set(opt).from(wrapper).save();
         }
 
-        function downloadExcel() {
-            const wrapper = document.getElementById('document-wrapper');
-            const html = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-                <head><meta charset="utf-8">
-                <style>
-                    body { font-family: 'Times New Roman', serif; color: black; }
-                    table { border-collapse: collapse; width: 100%; }
-                    td, th { border: 1px solid black; padding: 5px; vertical-align: top; }
-                    td[style*="border:none"], td[style*="border: none"] { border: none !important; }
-                </style>
-                </head>
-                <body>${wrapper.innerHTML}</body>
-                </html>
-            `;
-            const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Data_SPT_SPPD_Laporan.xls';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast("File Excel berhasil di-export!");
-        }
+        // Fitur Premium & Logika Simpan Manual
+        let isPremiumMode = false;
 
-        function downloadWord() {
-            const printArea = document.getElementById('document-wrapper').innerHTML;
-            const html = `
-                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head>
-                    <meta charset='utf-8'>
-                    <title>Export Word Document</title>
-                    <style>
-                        body { font-family: 'Times New Roman', Times, serif; color: black; }
-                        .a4-paper { 
-                            width: 210mm;
-                            margin: 0 auto; 
-                            padding: 15mm 15mm 15mm 15mm; 
-                            page-break-after: always; 
-                        }
-                        table { border-collapse: collapse; width: 100%; }
-                        .table-sppd td, .table-belakang td { border: 1px solid black; padding: 5px; }
-                        td[style*="border:none"], td[style*="border: none"] { border: none !important; }
-                        .page-break { page-break-after: always; }
-                    </style>
-                </head>
-                <body>
-                    ${printArea}
-                </body>
-                </html>
-            `;
-            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Dokumen_SPT_SPPD_Laporan.doc';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast("File Word berhasil di-export!");
-        }
-    </script>
-
-    <!-- Script Cloud Database & Google Sheets Synchronization -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        let app, db, auth, userId;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sppd-app';
-        let isFirebaseReady = false;
-
-        // --- FITUR AUTOSAVE KE SPREADSHEET ---
-        let autoSaveTimer = null;
-        const AUTO_SAVE_DELAY = 3500; // 3.5 detik
-
-        // Mendengarkan setiap input/ketikan pengguna
-        document.querySelectorAll('input, textarea').forEach(element => {
-            element.addEventListener('input', () => {
-                clearTimeout(autoSaveTimer);
-                autoSaveTimer = setTimeout(() => {
-                    const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
-                    if (sheetUrl && sheetUrl.startsWith('http') && typeof window.saveDataToCloud === 'function') {
-                        window.saveDataToCloud(true); // true menandakan mode penyimpanan otomatis/diam
-                    }
-                }, AUTO_SAVE_DELAY);
-            });
-        });
-
-        window.toggleSettings = function() {
-            const panel = document.getElementById('settings-panel');
-            panel.classList.toggle('hidden');
-        };
-
-        window.saveSheetSettings = function() {
-            const url = document.getElementById('in-gsheet-url').value.trim();
-            localStorage.setItem('custom_gsheet_webhook', url);
-            showToast("URL Google Spreadsheet berhasil disimpan!");
-            window.toggleSettings();
-        };
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedUrl = localStorage.getItem('custom_gsheet_webhook');
-            if (savedUrl) {
-                document.getElementById('in-gsheet-url').value = savedUrl;
-            }
-        });
-
-        async function initFirebase() {
-            try {
-                if (typeof __firebase_config !== 'undefined') {
-                    const firebaseConfig = JSON.parse(__firebase_config);
-                    app = initializeApp(firebaseConfig);
-                    db = getFirestore(app);
-                    auth = getAuth(app);
-
-                    if (typeof __initial_auth_token !== 'undefined') {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    userId = auth.currentUser?.uid;
-                    isFirebaseReady = true;
-                    
-                    await window.loadDataFromCloud(true);
-                }
-            } catch (e) {
-                console.error("Firebase init error:", e);
+        function togglePremium() {
+            isPremiumMode = !isPremiumMode;
+            const btnTog = document.getElementById('btn-premium-toggle');
+            const btnSave = document.getElementById('btn-manual-save');
+            
+            if(isPremiumMode) {
+                btnTog.classList.replace('bg-gray-400', 'bg-yellow-400');
+                btnTog.classList.replace('text-gray-800', 'text-yellow-900');
+                btnTog.innerHTML = 'PREMIUM AKTIF ⭐';
+                btnSave.classList.remove('hidden');
+                showToast("Mode Premium Aktif. Tombol Simpan Manual tersedia.", "success");
+            } else {
+                btnTog.classList.replace('bg-yellow-400', 'bg-gray-400');
+                btnTog.classList.replace('text-yellow-900', 'text-gray-800');
+                btnTog.innerHTML = 'AKTIFKAN PREMIUM';
+                btnSave.classList.add('hidden');
+                showToast("Mode Premium Nonaktif. Fitur Simpan disembunyikan.");
             }
         }
 
-        window.saveDataToCloud = async function(isAuto = false) {
-            const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
-            
-            // Validasi manual klik
-            if (!isAuto) {
-                if (!isFirebaseReady || !userId) {
-                    // Beri izin menyimpan jika ada URL webhook meskipun cloud lokal offline
-                    if (!sheetUrl || !sheetUrl.startsWith('http')) {
-                        showToast("URL Spreadsheet belum diatur!", "error");
-                        return;
-                    }
-                }
-            }
-            
-            const btn = document.getElementById('btn-save-cloud');
-            const originalText = "💾 Simpan Data";
-            if (!isAuto && btn) btn.innerHTML = "⏳ Menyimpan...";
-            
-            const data = {
-                action: "save",
-                kab: document.getElementById('in-kab').value,
-                kec: document.getElementById('in-kec').value,
-                desa: document.getElementById('in-desa').value,
-                alamat: document.getElementById('in-alamat').value,
-                kades: document.getElementById('in-kades').value,
-                noSurat: document.getElementById('in-noSurat').value,
-                tglSurat: document.getElementById('in-tglSurat').value,
-                dasar: document.getElementById('in-dasar').value,
-                p1Nama: document.getElementById('in-namaPgw1').value,
-                p1Jab: document.getElementById('in-jabatanPgw1').value,
-                p2Nama: document.getElementById('in-namaPgw2').value,
-                p2Jab: document.getElementById('in-jabatanPgw2').value,
-                p3Nama: document.getElementById('in-namaPgw3').value,
-                p3Jab: document.getElementById('in-jabatanPgw3').value,
-                maksud: document.getElementById('in-maksud').value,
-                tujuan: document.getElementById('in-tujuan').value,
-                kendaraan: document.getElementById('in-kendaraan').value,
-                tglBerangkat: document.getElementById('in-tglBerangkat').value,
-                tglKembali: document.getElementById('in-tglKembali').value,
-                laporan: document.getElementById('in-laporan').value,
-                timestamp: Date.now()
-            };
-
-            try {
-                // 1. Simpan ke Google Spreadsheet
-                if (sheetUrl && sheetUrl.startsWith('http')) {
-                    fetch(sheetUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    }).catch(err => console.log("Silent sheet request error:", err));
-                }
-
-                // 2. Simpan Backup ke Cloud Firestore
-                if (isFirebaseReady && userId) {
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'sppd_data', 'latest');
-                    setDoc(docRef, data).catch(e => console.log(e));
-
-                    if (!isAuto) {
-                        const historyRef = collection(db, 'artifacts', appId, 'users', userId, 'sppd_history');
-                        addDoc(historyRef, data).catch(e => console.log(e));
-                    }
-                }
-
-                if (!isAuto && btn) {
-                    btn.innerHTML = "✅ Tersimpan!";
-                    btn.classList.replace("bg-yellow-500", "bg-green-600");
-                    btn.classList.replace("hover:bg-yellow-600", "hover:bg-green-700");
-                    setTimeout(() => {
-                        btn.innerHTML = originalText;
-                        btn.classList.replace("bg-green-600", "bg-yellow-500");
-                        btn.classList.replace("hover:bg-green-700", "hover:bg-yellow-600");
-                    }, 2000);
-                    showToast("Data berhasil disimpan ke Spreadsheet!");
-                }
-            } catch(e) {
-                console.error(e);
-                if (!isAuto && btn) {
-                    btn.innerHTML = "❌ Gagal";
-                    setTimeout(() => btn.innerHTML = originalText, 2000);
-                    showToast("Gagal menyimpan data.", "error");
-                }
-            }
-        };
-
-        window.loadDataFromCloud = async function(isAuto = false) {
-            const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
-            
-            // Izinkan menarik data jika ada URL Spreadsheet MESKIPUN cloud offline
-            if ((!isFirebaseReady || !userId) && (!sheetUrl || !sheetUrl.startsWith('http'))) {
-                return; 
-            }
-            
-            const btn = document.getElementById('btn-load-cloud');
-            const originalText = "🔄 Tarik Terbaru";
-            if (btn && !isAuto) btn.innerHTML = "⏳ Menarik...";
-
-            try {
-                let loadedFromSheet = false;
-                
-                if (sheetUrl && sheetUrl.startsWith('http')) {
-                    try {
-                        // Tambahkan ?action=read agar Google Apps Script tahu ini request GET data
-                        const fetchUrl = new URL(sheetUrl);
-                        fetchUrl.searchParams.append('action', 'read');
-
-                        const response = await fetch(fetchUrl.toString());
-                        const sheetData = await response.json();
-                        
-                        if (Array.isArray(sheetData) && sheetData.length > 0) {
-                            applyDataToForm(sheetData[sheetData.length - 1]);
-                            loadedFromSheet = true;
-                        }
-                    } catch(err) {
-                        console.log("Sheet fetch note:", err);
-                    }
-                }
-
-                if (!loadedFromSheet && isFirebaseReady && userId) {
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'sppd_data', 'latest');
-                    const docSnap = await getDoc(docRef);
-                    
-                    if (docSnap.exists()) {
-                        applyDataToForm(docSnap.data());
-                    }
-                }
-
-                if (btn && !isAuto) {
-                    btn.innerHTML = "✅ Diperbarui!";
-                    btn.classList.replace("bg-blue-500", "bg-green-600");
-                    btn.classList.replace("hover:bg-blue-600", "hover:bg-green-700");
-                    setTimeout(() => {
-                        btn.innerHTML = originalText;
-                        btn.classList.replace("bg-green-600", "bg-blue-500");
-                        btn.classList.replace("hover:bg-green-700", "hover:bg-blue-600");
-                    }, 2000);
-                    showToast("Data berhasil ditarik!");
-                }
-            } catch(e) {
-                console.error(e);
-            }
-        };
-
-        function applyDataToForm(data) {
-            const setVal = (id, val) => { if (document.getElementById(id) && val !== undefined) document.getElementById(id).value = val; };
-            
-            setVal('in-kab', data.kab);
-            setVal('in-kec', data.kec);
-            setVal('in-desa', data.desa);
-            setVal('in-alamat', data.alamat);
-            setVal('in-kades', data.kades);
-            setVal('in-noSurat', data.noSurat);
-            setVal('in-tglSurat', data.tglSurat);
-            setVal('in-dasar', data.dasar);
-            setVal('in-namaPgw1', data.p1Nama);
-            setVal('in-jabatanPgw1', data.p1Jab);
-            setVal('in-namaPgw2', data.p2Nama);
-            setVal('in-jabatanPgw2', data.p2Jab);
-            setVal('in-namaPgw3', data.p3Nama);
-            setVal('in-jabatanPgw3', data.p3Jab);
-            setVal('in-maksud', data.maksud);
-            setVal('in-tujuan', data.tujuan);
-            setVal('in-kendaraan', data.kendaraan);
-            setVal('in-tglBerangkat', data.tglBerangkat);
-            setVal('in-tglKembali', data.tglKembali);
-            setVal('in-laporan', data.laporan);
-
-            window.updateDoc();
-        }
-
-        window.currentHistoryData = [];
-
-        window.openRiwayat = async function() {
-            const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
-            
-            // Boleh buka riwayat dari GSheet meskipun cloud database sedang tidak siap
-            if ((!isFirebaseReady || !userId) && (!sheetUrl || !sheetUrl.startsWith('http'))) {
-                showToast("Cloud Database belum siap dan URL Spreadsheet tidak ada.", "error");
+        window.saveDataToCloud = async function() {
+            const url = document.getElementById('in-gsheet-url').value;
+            if (!url) {
+                showToast("Masukkan URL Webhook Google Sheet terlebih dahulu di kolom integrasi.", "error");
                 return;
             }
 
-            const modal = document.getElementById('modal-riwayat');
-            const tbody = document.getElementById('table-riwayat-body');
+            localStorage.setItem('sppd_webhook_url', url);
+
+            const btnSave = document.getElementById('btn-manual-save');
+            const originalSaveText = btnSave.innerHTML;
             
-            modal.classList.remove('hidden');
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-gray-600 font-medium animate-pulse">⏳ Mengambil data riwayat dari Spreadsheet...</td></tr>';
+            btnSave.innerHTML = `<span>⏳ Menyimpan...</span>`;
+            btnSave.disabled = true;
+
+            const data = {
+                action: "save",
+                timestamp: Date.now(),
+                kab: document.getElementById('in-kab').value,
+                kec: document.getElementById('in-kec').value,
+                desa: document.getElementById('in-desa').value,
+                noSurat: document.getElementById('in-noSurat').value,
+                p1Nama: document.getElementById('in-namaPgw1').value,
+                tujuan: document.getElementById('in-tujuan').value,
+                tglBerangkat: document.getElementById('in-tglBerangkat').value,
+                laporan: document.getElementById('in-laporan').value
+            };
 
             try {
-                let records = [];
-                let fetchSuccess = false;
-                
-                if (sheetUrl && sheetUrl.startsWith('http')) {
-                    try {
-                        // Parameter action=read ditambahkan agar backend tahu kita meminta data
-                        const fetchUrl = new URL(sheetUrl);
-                        fetchUrl.searchParams.append('action', 'read');
-
-                        const response = await fetch(fetchUrl.toString());
-                        const sheetData = await response.json();
-                        
-                        if (Array.isArray(sheetData)) {
-                            records = sheetData;
-                            fetchSuccess = true;
-                        }
-                    } catch(err) {
-                        console.log("Sheet history fetch note:", err);
-                        showToast("Gagal membaca riwayat dari Spreadsheet. Pastikan URL Webhook merespon GET request dengan JSON.", "error");
-                    }
-                }
-
-                if (!fetchSuccess && records.length === 0 && isFirebaseReady && userId) {
-                    const histRef = collection(db, 'artifacts', appId, 'users', userId, 'sppd_history');
-                    const snapshot = await getDocs(histRef);
-                    snapshot.forEach(doc => {
-                        records.push({id: doc.id, ...doc.data()});
-                    });
-                }
-
-                records.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                window.currentHistoryData = records;
-                
-                window.renderRiwayatTable();
-
+                await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                showToast("Data berhasil disimpan secara manual ke Google Sheets!", "success");
             } catch (e) {
-                console.error(e);
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-red-500 font-bold">❌ Gagal memuat data riwayat.</td></tr>';
+                showToast("Gagal menyinkronkan data. Pastikan koneksi internet stabil.", "error");
+            } finally {
+                btnSave.innerHTML = originalSaveText;
+                btnSave.disabled = false;
             }
-        };
+        }
 
-        window.renderRiwayatTable = function() {
+        // LOGIKA MENAMPILKAN RIWAYAT
+        let historyData = [];
+
+        function openRiwayat() {
+            document.getElementById('modal-riwayat').classList.remove('hidden');
+            fetchRiwayat();
+        }
+
+        function closeRiwayat() {
+            document.getElementById('modal-riwayat').classList.add('hidden');
+        }
+
+        async function fetchRiwayat() {
+            const url = document.getElementById('in-gsheet-url').value;
             const tbody = document.getElementById('table-riwayat-body');
-            const records = window.currentHistoryData;
+            
+            if (!url) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-red-500 font-medium">Harap isi URL Webhook Apps Script di Pengaturan Terlebih Dahulu.</td></tr>';
+                return;
+            }
 
-            if (records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-gray-500">Belum ada riwayat tersimpan.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-500 font-medium animate-pulse">⏳ Menarik riwayat terbaru dari Cloud Spreadsheet...</td></tr>';
+
+            try {
+                const fetchUrl = new URL(url);
+                fetchUrl.searchParams.append('action', 'read'); 
+
+                const response = await fetch(fetchUrl.toString());
+                const data = await response.json();
+                
+                historyData = Array.isArray(data) ? data : [];
+                historyData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                
+                renderRiwayatTable();
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-red-500 font-medium">❌ Gagal membaca data. Pastikan script Google (doGet) sudah terpasang.</td></tr>';
+            }
+        }
+
+        function renderRiwayatTable() {
+            const tbody = document.getElementById('table-riwayat-body');
+            if (historyData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-500">Belum ada riwayat form yang disimpan.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = '';
-            records.forEach((rec, index) => {
+            historyData.forEach((rec, idx) => {
                 const tr = document.createElement('tr');
                 tr.className = 'border-b hover:bg-indigo-50 transition-colors';
                 
                 let dateStr = '-';
                 if (rec.timestamp) {
                     const d = new Date(rec.timestamp);
-                    dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                    dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                 }
 
                 tr.innerHTML = `
-                    <td class="p-3 text-gray-600">${dateStr}</td>
+                    <td class="p-3 text-gray-600 text-xs">${dateStr}</td>
                     <td class="p-3 font-medium text-gray-800">${rec.p1Nama || '-'}</td>
                     <td class="p-3 text-gray-700">${rec.tujuan || '-'}</td>
-                    <td class="p-3 text-gray-600">${rec.tglBerangkat || '-'}</td>
-                    <td class="p-3 text-center flex justify-center gap-1">
-                        <button onclick="window.loadSpecificHistory(${index})" class="bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1.5 rounded shadow-sm text-xs font-bold transition-colors flex-1" title="Tarik">
-                            ⬇️ Tarik
-                        </button>
-                        <button onclick="window.deleteHistory(${index})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1.5 rounded shadow-sm text-xs font-bold transition-colors flex-1" title="Hapus">
-                            🗑️ Hapus
+                    <td class="p-3 text-center">
+                        <button onclick="loadHistoryData(${idx})" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded shadow-sm text-xs font-bold transition-colors">
+                            ⬇️ Buka & Edit Form
                         </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
-        };
+        }
 
-        window.deleteHistory = async function(index) {
-            const record = window.currentHistoryData[index];
-            if (!record) return;
+        function loadHistoryData(index) {
+            const data = historyData[index];
+            if (!data) return;
 
-            if (!confirm(`Yakin ingin menghapus riwayat perjalanan ke ${record.tujuan || 'tujuan ini'}?\n\nData akan dihapus dari aplikasi dan juga diinstruksikan untuk dihapus dari Google Sheet.`)) {
-                return;
-            }
-
-            const sheetUrl = localStorage.getItem('custom_gsheet_webhook');
+            const setVal = (id, val) => { if(document.getElementById(id) && val) document.getElementById(id).value = val; };
             
-            try {
-                // 1. Instruksi penghapusan ke Spreadsheet
-                if (sheetUrl && sheetUrl.startsWith('http')) {
-                    const payload = {
-                        action: "delete",
-                        timestamp: record.timestamp
-                    };
-                    
-                    fetch(sheetUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    }).catch(err => console.log("Silent sheet delete error:", err));
-                }
+            setVal('in-kab', data.kab);
+            setVal('in-kec', data.kec);
+            setVal('in-desa', data.desa);
+            setVal('in-noSurat', data.noSurat);
+            setVal('in-namaPgw1', data.p1Nama);
+            setVal('in-tujuan', data.tujuan);
+            setVal('in-tglBerangkat', data.tglBerangkat);
+            setVal('in-laporan', data.laporan);
 
-                // 2. Hapus dari Cloud Storage Lokal
-                if (isFirebaseReady && userId && record.id) {
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'sppd_history', record.id);
-                    await deleteDoc(docRef);
-                }
-
-                // Hapus baris dari layar dan render ulang UI
-                window.currentHistoryData.splice(index, 1);
-                window.renderRiwayatTable();
-                
-                showToast("Data berhasil dihapus!", "success");
-
-            } catch (error) {
-                console.error("Error deleting history:", error);
-                showToast("Terjadi kesalahan saat menghapus data.", "error");
-            }
-        };
-
-        window.loadSpecificHistory = function(index) {
-            const data = window.currentHistoryData[index];
-            if(!data) return;
-
-            applyDataToForm(data);
-            document.getElementById('modal-riwayat').classList.add('hidden');
-            showToast("Data berhasil ditarik ke form!");
-        };
-
-        initFirebase();
+            updateDoc();
+            closeRiwayat();
+            showToast("Berhasil menarik riwayat ke formulir!", "success");
+        }
     </script>
 </body>
 </html>
