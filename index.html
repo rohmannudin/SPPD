@@ -147,8 +147,11 @@
                 <button id="btn-manual-save" onclick="saveDataToCloud()" class="hidden bg-yellow-500 hover:bg-yellow-600 text-yellow-900 px-4 py-2 rounded-lg font-bold shadow-lg transition transform hover:scale-105 flex items-center gap-2 border border-yellow-400">
                     <span>💾 Simpan</span>
                 </button>
-                <button onclick="openRiwayat()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition transform hover:scale-105 flex items-center gap-2 border border-indigo-400">
-                    <span>📊 Riwayat Form</span>
+                <button onclick="openRiwayat()" class="bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white px-5 py-2 rounded-lg font-bold shadow-md hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Riwayat Form</span>
                 </button>
                 <button onclick="closeForm()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition transform hover:scale-105 flex items-center gap-2 border border-green-400">
                     <span>Lihat Dokumen</span>
@@ -183,17 +186,17 @@
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Kabupaten & Kecamatan</label>
                             <div class="flex gap-2 mt-1">
-                                <input type="text" id="in-kab" placeholder="Kabupaten" class="block w-1/2 rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
-                                <input type="text" id="in-kec" placeholder="Kecamatan" class="block w-1/2 rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                                <input type="text" id="in-kab" placeholder="Cth: Mesuji" class="block w-1/2 rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
+                                <input type="text" id="in-kec" placeholder="Cth: Panca Jaya" class="block w-1/2 rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                             </div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Nama Desa</label>
-                            <input type="text" id="in-desa" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                            <input type="text" id="in-desa" placeholder="Cth: Fajar Asri" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Alamat Kantor</label>
-                            <input type="text" id="in-alamat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                            <input type="text" id="in-alamat" placeholder="Ketik alamat lengkap kantor..." class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                         </div>
                     </div>
                 </div>
@@ -204,7 +207,7 @@
                     <div class="space-y-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Nama Kepala Desa (Definitif)</label>
-                            <input type="text" id="in-kades" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm font-bold focus:border-blue-500" oninput="updateDoc()">
+                            <input type="text" id="in-kades" placeholder="Cth: Budi Santoso, S.E." class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm font-bold bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Tipe Penandatangan</label>
@@ -216,11 +219,11 @@
                         <div id="an-fields" class="hidden p-3 bg-yellow-50 border border-yellow-300 rounded space-y-3">
                             <div>
                                 <label class="block text-xs font-medium text-gray-700">Jabatan Penandatangan (Cth: Sekretaris Desa)</label>
-                                <input type="text" id="in-an-jabatan" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                                <input type="text" id="in-an-jabatan" placeholder="Cth: Sekretaris Desa" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-700">Nama Penandatangan (A.N.)</label>
-                                <input type="text" id="in-an-nama" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm font-bold focus:border-blue-500" oninput="updateDoc()">
+                                <input type="text" id="in-an-nama" placeholder="Cth: Ahmad Fadli, S.Kom." class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm font-bold bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                             </div>
                         </div>
                         <div>
@@ -240,36 +243,36 @@
                         <div class="flex gap-2">
                             <div class="w-1/2">
                                 <label class="block text-xs font-medium text-gray-700">Nomor Surat</label>
-                                <input type="text" id="in-noSurat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                                <input type="text" id="in-noSurat" placeholder="Cth: 141/001/IX/2026" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                             </div>
                             <div class="w-1/2">
                                 <label class="block text-xs font-medium text-gray-700">Tanggal Surat</label>
-                                <input type="date" id="in-tglSurat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                                <input type="date" id="in-tglSurat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 text-gray-500 focus:text-black transition-colors" oninput="updateDoc()">
                             </div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Dasar Pelaksanaan</label>
-                            <textarea id="in-dasar" rows="2" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()"></textarea>
+                            <textarea id="in-dasar" rows="2" placeholder="Cth: Peraturan Desa No. 5 Tahun 2026 tentang..." class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()"></textarea>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Maksud / Keperluan</label>
-                            <textarea id="in-maksud" rows="2" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()"></textarea>
+                            <textarea id="in-maksud" rows="2" placeholder="Cth: Konsultasi Pencairan Dana Desa Tahap 2..." class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()"></textarea>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Tempat Tujuan & Kendaraan</label>
                             <div class="flex gap-2 mt-1">
-                                <input type="text" id="in-tujuan" placeholder="Tujuan" class="block w-2/3 rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
-                                <input type="text" id="in-kendaraan" placeholder="Kendaraan" class="block w-1/3 rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                                <input type="text" id="in-tujuan" placeholder="Cth: Kantor DPMD Kab. Mesuji" class="block w-2/3 rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
+                                <input type="text" id="in-kendaraan" placeholder="Cth: Mobil Siaga" class="block w-1/3 rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <div class="w-1/2">
                                 <label class="block text-xs font-medium text-gray-700">Tgl Berangkat</label>
-                                <input type="date" id="in-tglBerangkat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                                <input type="date" id="in-tglBerangkat" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 text-gray-500 focus:text-black transition-colors" oninput="updateDoc()">
                             </div>
                             <div class="w-1/2">
                                 <label class="block text-xs font-medium text-gray-700">Tgl Kembali</label>
-                                <input type="date" id="in-tglKembali" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                                <input type="date" id="in-tglKembali" class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 text-gray-500 focus:text-black transition-colors" oninput="updateDoc()">
                             </div>
                         </div>
                     </div>
@@ -283,13 +286,13 @@
                     <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">4. Pegawai Bertugas</h3>
                     <div class="space-y-3 mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
                         <h4 class="text-xs font-bold text-blue-700">Pegawai Utama (Ketua)</h4>
-                        <input type="text" id="in-namaPgw1" placeholder="Nama Lengkap" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 mb-2" oninput="updateDoc()">
-                        <input type="text" id="in-jabatanPgw1" placeholder="Jabatan" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                        <input type="text" id="in-namaPgw1" placeholder="Cth: Andi Wijaya" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 mb-2 placeholder-gray-400 transition-colors" oninput="updateDoc()">
+                        <input type="text" id="in-jabatanPgw1" placeholder="Cth: Kepala Urusan Keuangan" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                     </div>
                     <div class="space-y-3 mb-4 p-3 bg-gray-50 border rounded-md">
                         <h4 class="text-xs font-bold text-gray-600">Pengikut (Opsional)</h4>
-                        <input type="text" id="in-namaPgw2" placeholder="Nama Pengikut" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500 mb-2" oninput="updateDoc()">
-                        <input type="text" id="in-jabatanPgw2" placeholder="Jabatan / Umur" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()">
+                        <input type="text" id="in-namaPgw2" placeholder="Cth: Siti Aminah (Boleh Kosong)" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 mb-2 placeholder-gray-400 transition-colors" oninput="updateDoc()">
+                        <input type="text" id="in-jabatanPgw2" placeholder="Cth: Staf / 30 Thn" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                     </div>
                 </div>
 
@@ -300,7 +303,7 @@
                         <button onclick="generateAIReport()" class="w-full bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-bold py-2 px-4 rounded border border-purple-300 transition-colors">
                             🔄 Generate Draf Teks Laporan
                         </button>
-                        <textarea id="in-laporan" rows="5" class="block w-full rounded-md border-gray-300 border p-2 text-sm focus:border-blue-500" oninput="updateDoc()"></textarea>
+                        <textarea id="in-laporan" rows="5" placeholder="Ketik hasil laporan di sini atau klik Generate Draf..." class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()"></textarea>
                     </div>
                 </div>
             </div>
@@ -670,24 +673,27 @@
     </div>
 
     <!-- MODAL RIWAYAT SPREADSHEET -->
-    <div id="modal-riwayat" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-[60] hidden flex justify-center items-center backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-2xl w-11/12 md:w-3/4 max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-gray-200">
-            <div class="p-4 border-b flex justify-between items-center bg-gradient-to-r from-indigo-700 to-purple-700 text-white">
-                <h3 class="font-bold text-lg flex items-center gap-2">
-                    📊 Riwayat Database (Google Sheet)
+    <div id="modal-riwayat" class="fixed inset-0 bg-slate-900 bg-opacity-80 z-[60] hidden flex justify-center items-center backdrop-blur-md transition-opacity">
+        <div class="bg-white rounded-xl w-11/12 md:w-3/4 max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+            <div class="p-5 border-b flex justify-between items-center bg-slate-800 text-white">
+                <h3 class="font-bold text-xl flex items-center gap-2 tracking-wide">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    Manajemen Riwayat Dokumen
                 </h3>
-                <button onclick="closeRiwayat()" class="text-white hover:bg-red-500 px-3 py-1.5 rounded-lg font-bold transition-colors text-sm border border-transparent hover:border-red-400">
+                <button onclick="closeRiwayat()" class="text-slate-300 hover:text-white hover:bg-slate-700 px-3 py-1.5 rounded-lg font-bold transition-colors text-sm flex items-center gap-1 border border-transparent hover:border-slate-500">
                     ✕ Tutup
                 </button>
             </div>
-            <div class="p-0 overflow-auto flex-1 bg-gray-50">
+            <div class="p-0 overflow-auto flex-1 bg-slate-50">
                 <table class="w-full text-sm text-left border-collapse">
-                    <thead class="bg-gray-200 text-gray-700 sticky top-0 shadow-sm">
+                    <thead class="bg-slate-200 text-slate-700 sticky top-0 shadow-sm z-10">
                         <tr>
-                            <th class="border-b border-gray-300 p-3 font-semibold whitespace-nowrap">Waktu Simpan</th>
-                            <th class="border-b border-gray-300 p-3 font-semibold">Pegawai Bertugas</th>
-                            <th class="border-b border-gray-300 p-3 font-semibold">Tujuan</th>
-                            <th class="border-b border-gray-300 p-3 font-semibold text-center">Aksi</th>
+                            <th class="border-b border-slate-300 p-3 font-semibold whitespace-nowrap">Waktu Simpan</th>
+                            <th class="border-b border-slate-300 p-3 font-semibold">Pegawai Bertugas</th>
+                            <th class="border-b border-slate-300 p-3 font-semibold">Tujuan</th>
+                            <th class="border-b border-slate-300 p-3 font-semibold text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="table-riwayat-body" class="bg-white">
@@ -738,44 +744,59 @@
                 document.getElementById('in-gsheet-url').value = savedUrl;
             }
 
-            // Dummy Data agar form langsung terisi
-            const dummyData = {
-                'in-kab': 'BANDUNG',
-                'in-kec': 'CICALENGKA',
-                'in-desa': 'CUKUANG',
-                'in-alamat': 'Jl. Raya Desa Cikuang No 10, Kode Pos 40395',
-                'in-kades': 'BAPAK JOKO, S.E.',
-                'in-noSurat': '141/001/IX/2026',
-                'in-dasar': 'Peraturan Desa Cukuang No 5 Tahun 2026 tentang Pembangunan.',
-                'in-namaPgw1': 'BUDI SANTOSO, S.Kom',
-                'in-jabatanPgw1': 'Sekretaris Desa',
-                'in-namaPgw2': 'SITI AMINAH',
-                'in-jabatanPgw2': 'Kaur Keuangan / 30 Thn',
-                'in-maksud': 'Konsultasi Pencairan Dana Desa Tahap 2 di DPMD Kabupaten.',
-                'in-tujuan': 'Kantor DPMD Kabupaten Bandung',
-                'in-kendaraan': 'Mobil Siaga Desa (D 1234 ABC)',
-                'in-an-jabatan': 'Sekretaris Desa',
-                'in-an-nama': 'BUDI SANTOSO, S.Kom'
+            // --- TAMBAHAN: Load Logo & TTD yang Tersimpan di Perangkat ---
+            const savedLogo = localStorage.getItem('sppd_saved_logo');
+            if (savedLogo) {
+                const outLogos = document.querySelectorAll('.out-logo');
+                outLogos.forEach(img => {
+                    img.src = savedLogo;
+                    img.style.display = 'inline-block';
+                });
+            }
+
+            const savedTtd = localStorage.getItem('sppd_saved_ttd');
+            if (savedTtd) {
+                const outTtds = document.querySelectorAll('.ttd-img');
+                outTtds.forEach(img => {
+                    img.src = savedTtd;
+                    img.style.display = 'inline-block';
+                    img.style.width = '120px';
+                });
+            }
+            // -------------------------------------------------------------
+
+            // Semua field dikosongkan kecuali alamat kantor
+            const initialData = {
+                'in-kab': '',
+                'in-kec': '',
+                'in-desa': '',
+                'in-alamat': 'Alamat : Jl. Desa Fajar Asri Kecamatan Panca Jaya Kabupaten Mesuji Kd : 34698 website : fajarasri-mesuji.berdesa.id',
+                'in-kades': '',
+                'in-noSurat': '',
+                'in-dasar': '',
+                'in-namaPgw1': '',
+                'in-jabatanPgw1': '',
+                'in-namaPgw2': '',
+                'in-jabatanPgw2': '',
+                'in-maksud': '',
+                'in-tujuan': '',
+                'in-kendaraan': '',
+                'in-an-jabatan': '',
+                'in-an-nama': '',
+                'in-laporan': ''
             };
 
-            for (const [id, value] of Object.entries(dummyData)) {
+            for (const [id, value] of Object.entries(initialData)) {
                 if(document.getElementById(id)) {
                     document.getElementById(id).value = value;
                 }
             }
 
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
+            // Kosongkan form tanggal
+            document.getElementById('in-tglSurat').value = '';
+            document.getElementById('in-tglBerangkat').value = '';
+            document.getElementById('in-tglKembali').value = '';
 
-            const todayStr = today.toISOString().split('T')[0];
-            const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-            document.getElementById('in-tglSurat').value = todayStr;
-            document.getElementById('in-tglBerangkat').value = todayStr;
-            document.getElementById('in-tglKembali').value = tomorrowStr;
-
-            generateAIReport(); 
             updateDoc();        
         };
 
@@ -809,13 +830,16 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
+                    const result = e.target.result;
+                    localStorage.setItem('sppd_saved_logo', result); // Simpan ke perangkat
                     outLogos.forEach(img => {
-                        img.src = e.target.result;
+                        img.src = result;
                         img.style.display = 'inline-block';
                     });
                 }
                 reader.readAsDataURL(file);
             } else {
+                localStorage.removeItem('sppd_saved_logo');
                 outLogos.forEach(img => {
                     img.src = '';
                     img.style.display = 'none';
@@ -830,8 +854,10 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
+                    const result = e.target.result;
+                    localStorage.setItem('sppd_saved_ttd', result); // Simpan ke perangkat
                     outTtds.forEach(img => {
-                        img.src = e.target.result;
+                        img.src = result;
                         img.style.display = 'inline-block';
                         img.style.width = '120px';
                         img.style.transform = 'translate(0px, 0px)'; // reset posisi saat re-upload
@@ -1053,10 +1079,23 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
                 kab: document.getElementById('in-kab').value,
                 kec: document.getElementById('in-kec').value,
                 desa: document.getElementById('in-desa').value,
+                alamat: document.getElementById('in-alamat').value,
+                kades: document.getElementById('in-kades').value,
+                ttdType: document.getElementById('in-ttd-type').value,
+                anJabatan: document.getElementById('in-an-jabatan').value,
+                anNama: document.getElementById('in-an-nama').value,
                 noSurat: document.getElementById('in-noSurat').value,
-                p1Nama: document.getElementById('in-namaPgw1').value,
+                tglSurat: document.getElementById('in-tglSurat').value,
+                dasar: document.getElementById('in-dasar').value,
+                maksud: document.getElementById('in-maksud').value,
+                kendaraan: document.getElementById('in-kendaraan').value,
                 tujuan: document.getElementById('in-tujuan').value,
                 tglBerangkat: document.getElementById('in-tglBerangkat').value,
+                tglKembali: document.getElementById('in-tglKembali').value,
+                p1Nama: document.getElementById('in-namaPgw1').value,
+                p1Jabatan: document.getElementById('in-jabatanPgw1').value,
+                p2Nama: document.getElementById('in-namaPgw2').value,
+                p2Jabatan: document.getElementById('in-jabatanPgw2').value,
                 laporan: document.getElementById('in-laporan').value
             };
 
@@ -1125,7 +1164,7 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
             tbody.innerHTML = '';
             historyData.forEach((rec, idx) => {
                 const tr = document.createElement('tr');
-                tr.className = 'border-b hover:bg-indigo-50 transition-colors';
+                tr.className = 'border-b hover:bg-slate-50 transition-colors';
                 
                 let dateStr = '-';
                 if (rec.timestamp) {
@@ -1137,9 +1176,12 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
                     <td class="p-3 text-gray-600 text-xs">${dateStr}</td>
                     <td class="p-3 font-medium text-gray-800">${rec.p1Nama || '-'}</td>
                     <td class="p-3 text-gray-700">${rec.tujuan || '-'}</td>
-                    <td class="p-3 text-center">
-                        <button onclick="loadHistoryData(${idx})" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded shadow-sm text-xs font-bold transition-colors">
-                            ⬇️ Buka & Edit Form
+                    <td class="p-3 text-center flex justify-center gap-2">
+                        <button onclick="loadHistoryData(${idx})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded shadow-sm text-xs font-semibold transition-all flex items-center gap-1">
+                            ✏️ Edit
+                        </button>
+                        <button onclick="deleteHistoryData(${idx})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded shadow-sm text-xs font-semibold transition-all flex items-center gap-1">
+                            🗑️ Hapus
                         </button>
                     </td>
                 `;
@@ -1147,21 +1189,65 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
             });
         }
 
+        async function deleteHistoryData(index) {
+            const data = historyData[index];
+            const url = document.getElementById('in-gsheet-url').value;
+            
+            // Hapus dari interface aplikasi (Optimistic Delete)
+            historyData.splice(index, 1);
+            renderRiwayatTable();
+            showToast("Data riwayat berhasil dihapus.", "success");
+
+            // Coba kirim perintah hapus ke Webhook Google Sheets (opsional)
+            if (url) {
+                try {
+                    const payload = { action: 'delete', timestamp: data.timestamp };
+                    await fetch(url, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } catch(e) {
+                    console.log("Abaikan jika webhook belum men-support fitur delete.");
+                }
+            }
+        }
+
         function loadHistoryData(index) {
             const data = historyData[index];
             if (!data) return;
 
-            const setVal = (id, val) => { if(document.getElementById(id) && val) document.getElementById(id).value = val; };
+            const setVal = (id, val, def = '') => { 
+                if(document.getElementById(id)) {
+                    document.getElementById(id).value = (val !== undefined && val !== null && val !== '') ? val : def; 
+                }
+            };
             
+            // Masukkan SEMUA data yang tersimpan, atau biarkan default/kosong
             setVal('in-kab', data.kab);
             setVal('in-kec', data.kec);
             setVal('in-desa', data.desa);
+            setVal('in-alamat', data.alamat, 'Alamat : Jl. Desa Fajar Asri Kecamatan Panca Jaya Kabupaten Mesuji Kd : 34698 website : fajarasri-mesuji.berdesa.id');
+            setVal('in-kades', data.kades);
+            setVal('in-ttd-type', data.ttdType, 'kades');
+            setVal('in-an-jabatan', data.anJabatan);
+            setVal('in-an-nama', data.anNama);
             setVal('in-noSurat', data.noSurat);
-            setVal('in-namaPgw1', data.p1Nama);
+            setVal('in-tglSurat', data.tglSurat);
+            setVal('in-dasar', data.dasar);
+            setVal('in-maksud', data.maksud);
             setVal('in-tujuan', data.tujuan);
+            setVal('in-kendaraan', data.kendaraan);
             setVal('in-tglBerangkat', data.tglBerangkat);
+            setVal('in-tglKembali', data.tglKembali);
+            setVal('in-namaPgw1', data.p1Nama);
+            setVal('in-jabatanPgw1', data.p1Jabatan);
+            setVal('in-namaPgw2', data.p2Nama);
+            setVal('in-jabatanPgw2', data.p2Jabatan);
             setVal('in-laporan', data.laporan);
 
+            toggleAN(); // Update UI berdasarkan Tipe Tanda Tangan
             updateDoc();
             closeRiwayat();
             showToast("Berhasil menarik riwayat ke formulir!", "success");
