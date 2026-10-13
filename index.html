@@ -170,7 +170,6 @@
                     <h3 class="font-bold text-green-800 border-b border-green-300 pb-2 mb-3 flex justify-between items-center">
                         <span>🌐 Integrasi doPost (Webhook)</span>
                     </h3>
-                    <!-- URL DIMASUKKAN LANGSUNG DI ATRIBUT value="URL_DISINI" -->
                     <input type="text" id="in-gsheet-url" value="https://script.google.com/macros/s/AKfycbwfOCEZ5lyQ0-OYpyAOiWaKPi9RjerA4UkKP4kYc4Meaikjf1Q32dcq4ntyjrABLQfx/exec" placeholder="URL Webhook Apps Script" class="w-full p-2 border rounded text-xs focus:ring-green-500 focus:border-green-500">
                     <p class="text-[10px] text-green-700 mt-2 font-medium">Input otomatis disimpan ke Cloud/Google Sheet.</p>
                 </div>
@@ -226,9 +225,21 @@
                                 <input type="text" id="in-an-nama" placeholder="Cth: Ahmad Fadli, S.Kom." class="mt-1 block w-full rounded-md border-gray-300 border p-2 text-sm font-bold bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
                             </div>
                         </div>
+                        
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mt-2">Upload Scan TTD (PNG Transparan)</label>
                             <input type="file" id="in-ttd" accept="image/*" class="mt-1 block w-full rounded-md border-gray-300 border p-1 text-sm bg-gray-50 focus:border-blue-500">
+                            
+                            <!-- Panel Kontrol TTD -->
+                            <div id="ttd-controls" class="hidden mt-2 p-2 bg-blue-50 rounded border border-blue-200 flex items-center gap-3">
+                                <button onclick="hapusTTD()" class="bg-red-500 text-white text-[10px] px-2 py-1.5 rounded hover:bg-red-600 shadow-sm font-bold transition-colors">🗑️ Hapus</button>
+                                <div class="flex-1 flex items-center gap-2">
+                                    <label class="text-[10px] font-bold text-blue-800">Perbesar/Kecil:</label>
+                                    <input type="range" id="ttd-scale" min="50" max="300" value="120" class="w-full accent-blue-600" oninput="resizeTTD()">
+                                    <span id="ttd-scale-val" class="text-[10px] text-gray-600 font-mono w-8">120px</span>
+                                </div>
+                            </div>
+
                             <p class="text-[10px] text-gray-500 mt-1">Bisa digeser (drag & drop) di halaman pratinjau PDF nanti.</p>
                         </div>
                     </div>
@@ -286,13 +297,19 @@
                     <h3 class="font-semibold text-gray-700 border-b pb-2 mb-3">4. Pegawai Bertugas</h3>
                     <div class="space-y-3 mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
                         <h4 class="text-xs font-bold text-blue-700">Pegawai Utama (Ketua)</h4>
-                        <input type="text" id="in-namaPgw1" placeholder="Cth: Andi Wijaya" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 mb-2 placeholder-gray-400 transition-colors" oninput="updateDoc()">
-                        <input type="text" id="in-jabatanPgw1" placeholder="Cth: Kepala Urusan Keuangan" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
+                        <input type="text" id="in-namaPgw1" placeholder="Cth: Andi Wijaya" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-white focus:border-blue-500 mb-2 placeholder-gray-400 transition-colors shadow-sm" oninput="updateDoc()">
+                        <input type="text" id="in-jabatanPgw1" placeholder="Cth: Kepala Urusan Keuangan" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-white focus:border-blue-500 placeholder-gray-400 transition-colors shadow-sm" oninput="updateDoc()">
                     </div>
-                    <div class="space-y-3 mb-4 p-3 bg-gray-50 border rounded-md">
-                        <h4 class="text-xs font-bold text-gray-600">Pengikut (Opsional)</h4>
-                        <input type="text" id="in-namaPgw2" placeholder="Cth: Siti Aminah (Boleh Kosong)" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 mb-2 placeholder-gray-400 transition-colors" oninput="updateDoc()">
-                        <input type="text" id="in-jabatanPgw2" placeholder="Cth: Staf / 30 Thn" class="block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-100 focus:bg-white focus:border-blue-500 placeholder-gray-400 transition-colors" oninput="updateDoc()">
+                    
+                    <!-- Container Pengikut Dinamis -->
+                    <div class="space-y-3 mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                        <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-2">
+                            <h4 class="text-xs font-bold text-gray-600">Pengikut (Opsional)</h4>
+                            <button type="button" onclick="tambahPengikut()" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors shadow-sm">➕ Tambah Orang</button>
+                        </div>
+                        <div id="pengikut-container" class="space-y-2">
+                            <!-- Baris input pengikut akan ditambahkan via JS -->
+                        </div>
                     </div>
                 </div>
 
@@ -476,10 +493,10 @@
                     <tr>
                         <td style="text-align: center;">8.</td>
                         <td>Pengikut : Nama<br>
-                            <span id="out-sppd-pengikut-no" style="display:inline-block; margin-top:5px; font-weight: bold;"></span>
+                            <span id="out-sppd-pengikut-no" style="display:inline-block; margin-top:5px; font-weight: bold; line-height: 1.4;"></span>
                         </td>
                         <td>Umur / Jabatan<br>
-                            <span id="out-sppd-pengikut-jabatan" style="display:inline-block; margin-top:5px;"></span>
+                            <span id="out-sppd-pengikut-jabatan" style="display:inline-block; margin-top:5px; line-height: 1.4;"></span>
                         </td>
                     </tr>
                 </table>
@@ -718,12 +735,10 @@
         }
 
         function closeForm() {
-            // Sembunyikan form agar dokumen terlihat
             document.getElementById('form-modal').classList.add('opacity-0', 'pointer-events-none');
         }
 
         function openForm() {
-            // Tampilkan kembali form modal
             document.getElementById('form-modal').classList.remove('opacity-0', 'pointer-events-none');
         }
 
@@ -744,7 +759,6 @@
                 document.getElementById('in-gsheet-url').value = savedUrl;
             }
 
-            // --- TAMBAHAN: Load Logo & TTD yang Tersimpan di Perangkat ---
             const savedLogo = localStorage.getItem('sppd_saved_logo');
             if (savedLogo) {
                 const outLogos = document.querySelectorAll('.out-logo');
@@ -757,15 +771,15 @@
             const savedTtd = localStorage.getItem('sppd_saved_ttd');
             if (savedTtd) {
                 const outTtds = document.querySelectorAll('.ttd-img');
+                const ttdScale = document.getElementById('ttd-scale').value;
                 outTtds.forEach(img => {
                     img.src = savedTtd;
                     img.style.display = 'inline-block';
-                    img.style.width = '120px';
+                    img.style.width = ttdScale + 'px';
                 });
+                document.getElementById('ttd-controls').classList.remove('hidden');
             }
-            // -------------------------------------------------------------
 
-            // Semua field dikosongkan kecuali alamat kantor
             const initialData = {
                 'in-kab': '',
                 'in-kec': '',
@@ -776,8 +790,6 @@
                 'in-dasar': '',
                 'in-namaPgw1': '',
                 'in-jabatanPgw1': '',
-                'in-namaPgw2': '',
-                'in-jabatanPgw2': '',
                 'in-maksud': '',
                 'in-tujuan': '',
                 'in-kendaraan': '',
@@ -792,11 +804,12 @@
                 }
             }
 
-            // Kosongkan form tanggal
             document.getElementById('in-tglSurat').value = '';
             document.getElementById('in-tglBerangkat').value = '';
             document.getElementById('in-tglKembali').value = '';
 
+            // Init 1 baris pengikut kosong
+            tambahPengikut(); 
             updateDoc();        
         };
 
@@ -831,7 +844,7 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const result = e.target.result;
-                    localStorage.setItem('sppd_saved_logo', result); // Simpan ke perangkat
+                    localStorage.setItem('sppd_saved_logo', result); 
                     outLogos.forEach(img => {
                         img.src = result;
                         img.style.display = 'inline-block';
@@ -847,7 +860,7 @@
             }
         });
 
-        // LOGIKA UPLOAD TANDA TANGAN
+        // LOGIKA UPLOAD & KONTROL TANDA TANGAN
         document.getElementById('in-ttd').addEventListener('change', function(event) {
             const file = event.target.files[0];
             const outTtds = document.querySelectorAll('.ttd-img');
@@ -855,17 +868,39 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const result = e.target.result;
-                    localStorage.setItem('sppd_saved_ttd', result); // Simpan ke perangkat
+                    localStorage.setItem('sppd_saved_ttd', result); 
                     outTtds.forEach(img => {
                         img.src = result;
                         img.style.display = 'inline-block';
-                        img.style.width = '120px';
-                        img.style.transform = 'translate(0px, 0px)'; // reset posisi saat re-upload
+                        img.style.width = document.getElementById('ttd-scale').value + 'px';
+                        img.style.transform = 'translate(0px, 0px)'; 
                     });
+                    document.getElementById('ttd-controls').classList.remove('hidden');
                 }
                 reader.readAsDataURL(file);
             }
         });
+
+        function hapusTTD() {
+            localStorage.removeItem('sppd_saved_ttd');
+            document.getElementById('in-ttd').value = '';
+            const outTtds = document.querySelectorAll('.ttd-img');
+            outTtds.forEach(img => {
+                img.src = '';
+                img.style.display = 'none';
+                img.style.transform = 'translate(0px, 0px)';
+            });
+            document.getElementById('ttd-controls').classList.add('hidden');
+        }
+
+        function resizeTTD() {
+            const scale = document.getElementById('ttd-scale').value;
+            document.getElementById('ttd-scale-val').textContent = scale + 'px';
+            const outTtds = document.querySelectorAll('.ttd-img');
+            outTtds.forEach(img => {
+                img.style.width = scale + 'px';
+            });
+        }
 
         // --- DRAG AND DROP TANDA TANGAN ---
         let activeDragElement = null;
@@ -921,7 +956,28 @@
                 activeDragElement.style.transform = `translate(${currentX}px, ${currentY}px)`;
             }
         }
-        // ----------------------------------
+
+        // LOGIKA PENGIKUT DINAMIS (TAMBAH/HAPUS)
+        function tambahPengikut(namaVal = '', jabVal = '') {
+            const container = document.getElementById('pengikut-container');
+            const row = document.createElement('div');
+            row.className = 'pengikut-row flex gap-2 items-start bg-white p-2 rounded border border-gray-200 shadow-sm transition-all';
+            row.innerHTML = `
+                <div class="flex-1 space-y-2">
+                    <input type="text" class="in-pengikut-nama block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-50 focus:bg-white focus:border-blue-500 placeholder-gray-400" placeholder="Nama Pengikut (Boleh Kosong)" value="${namaVal}" oninput="updateDoc()">
+                    <input type="text" class="in-pengikut-jabatan block w-full rounded-md border-gray-300 border p-2 text-sm bg-gray-50 focus:bg-white focus:border-blue-500 placeholder-gray-400" placeholder="Jabatan / Umur (Boleh Kosong)" value="${jabVal}" oninput="updateDoc()">
+                </div>
+                <button type="button" onclick="hapusPengikut(this)" class="mt-1 bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-md border border-red-200 transition-colors" title="Hapus Pengikut">🗑️</button>
+            `;
+            container.appendChild(row);
+            updateDoc();
+        }
+
+        function hapusPengikut(btn) {
+            const row = btn.closest('.pengikut-row');
+            row.remove();
+            updateDoc();
+        }
 
         function generateAIReport() {
             const maksud = document.getElementById('in-maksud').value || "[Keperluan Belum Diisi]";
@@ -1003,31 +1059,82 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
                 elJabatan[i].style.display = ttdJabatan ? 'block' : 'none';
             }
 
-            const p2N = document.getElementById('in-namaPgw2').value;
-            const p2J = document.getElementById('in-jabatanPgw2').value;
-            
-            let pengikutNo = p2N ? `1. ${p2N.toUpperCase()}` : "-";
-            let pengikutJab = p2N ? toTitleCase(p2J) : "-";
-            
-            document.getElementById('out-sppd-pengikut-no').innerHTML = pengikutNo;
-            document.getElementById('out-sppd-pengikut-jabatan').innerHTML = pengikutJab;
+            // --- PENGELOLAAN DATA PENGIKUT DINAMIS ---
+            const pengikutRows = document.querySelectorAll('.pengikut-row');
+            let listPengikut = [];
+            pengikutRows.forEach(row => {
+                const nama = row.querySelector('.in-pengikut-nama').value.trim();
+                const jabatan = row.querySelector('.in-pengikut-jabatan').value.trim();
+                // Hanya tambahkan jika minimal nama atau jabatan diisi
+                if (nama || jabatan) {
+                    listPengikut.push({ nama: nama, jabatan: jabatan });
+                }
+            });
 
+            // 1. Update List SPPD
+            let sppdNoHtml = '';
+            let sppdJabHtml = '';
+            
+            if (listPengikut.length === 0) {
+                sppdNoHtml = '-';
+                sppdJabHtml = '-';
+            } else if (listPengikut.length === 1) {
+                sppdNoHtml = `1. ${listPengikut[0].nama.toUpperCase()}`;
+                sppdJabHtml = toTitleCase(listPengikut[0].jabatan);
+            } else {
+                for (let i = 0; i < listPengikut.length; i++) {
+                    sppdNoHtml += `${i+1}. ${listPengikut[i].nama.toUpperCase()}<br>`;
+                    sppdJabHtml += `${toTitleCase(listPengikut[i].jabatan)}<br>`;
+                }
+            }
+            
+            document.getElementById('out-sppd-pengikut-no').innerHTML = sppdNoHtml;
+            document.getElementById('out-sppd-pengikut-jabatan').innerHTML = sppdJabHtml;
+
+            // 2. Update List SPT
             let sptList = `<li><div style="display:flex"><div style="width:70px">Nama</div><div style="width:15px">:</div><b>${vals.namaPgw}</b></div>
                            <div style="display:flex"><div style="width:70px">Jabatan</div><div style="width:15px">:</div><div>${vals.jabatanPgw}</div></div></li>`;
-            if (p2N) {
-                sptList += `<li><div style="display:flex"><div style="width:70px">Nama</div><div style="width:15px">:</div><b>${p2N.toUpperCase()}</b></div>
-                           <div style="display:flex"><div style="width:70px">Jabatan</div><div style="width:15px">:</div><div>${toTitleCase(p2J)}</div></div></li>`;
-            }
+            
+            listPengikut.forEach((p) => {
+                sptList += `<li style="margin-top:5px;"><div style="display:flex"><div style="width:70px">Nama</div><div style="width:15px">:</div><b>${p.nama.toUpperCase()}</b></div>
+                           <div style="display:flex"><div style="width:70px">Jabatan</div><div style="width:15px">:</div><div>${toTitleCase(p.jabatan)}</div></div></li>`;
+            });
             document.getElementById('out-spt-pegawai-list').innerHTML = sptList;
             
             document.getElementById('out-hasil-laporan-container').textContent = document.getElementById('in-laporan').value;
+
+            // --- TAMBAHAN: Update judul tab browser otomatis untuk Print PDF ---
+            // Browser mengambil tag <title> sebagai nama file default saat Print -> Save as PDF
+            let namaPrint = vals.namaPgw || "Tanpa_Nama";
+            
+            // Cek apakah ada pengikut untuk ditambahkan ke nama file
+            if (listPengikut.length === 1) {
+                if (listPengikut[0].nama) {
+                    namaPrint += " dan " + listPengikut[0].nama.toUpperCase();
+                }
+            } else if (listPengikut.length > 1) {
+                namaPrint += " dkk";
+            }
+            
+            let tujuanPrint = vals.tujuan ? vals.tujuan.toUpperCase() : "TANPA_TUJUAN";
+            
+            // Membersihkan karakter yang berpotensi error pada sistem penamaan file OS
+            namaPrint = namaPrint.replace(/[^a-zA-Z0-9.\- ]/g, "");
+            tujuanPrint = tujuanPrint.replace(/[^a-zA-Z0-9.\- ]/g, "");
+            
+            // Set judul browser yang akan dipakai sebagai nama file PDF saat tombol Print diklik
+            document.title = `SPPD - ${namaPrint} - ${tujuanPrint}`;
         }
 
         function downloadPDF() {
             const wrapper = document.getElementById('document-wrapper');
+            
+            // Mengambil judul dinamis langsung dari judul web (document.title) yang sudah terformat rapi
+            let dynamicFileName = document.title + ".pdf";
+
             const opt = {
                 margin: 0,
-                filename: 'SPPD_Otomatis.pdf',
+                filename: dynamicFileName,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -1073,6 +1180,14 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
             btnSave.innerHTML = `<span>⏳ Menyimpan...</span>`;
             btnSave.disabled = true;
 
+            // Ambil data pengikut pertama jika ada (untuk backward compatibility dengan sheet lama)
+            const pengikutRows = document.querySelectorAll('.pengikut-row');
+            let p2Nama = '', p2Jabatan = '';
+            if(pengikutRows.length > 0) {
+                p2Nama = pengikutRows[0].querySelector('.in-pengikut-nama').value;
+                p2Jabatan = pengikutRows[0].querySelector('.in-pengikut-jabatan').value;
+            }
+
             const data = {
                 action: "save",
                 timestamp: Date.now(),
@@ -1094,8 +1209,8 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
                 tglKembali: document.getElementById('in-tglKembali').value,
                 p1Nama: document.getElementById('in-namaPgw1').value,
                 p1Jabatan: document.getElementById('in-jabatanPgw1').value,
-                p2Nama: document.getElementById('in-namaPgw2').value,
-                p2Jabatan: document.getElementById('in-jabatanPgw2').value,
+                p2Nama: p2Nama,         // Hanya menyimpan 1 pengikut ke sheet lama jika format webhook belum diupdate
+                p2Jabatan: p2Jabatan,
                 laporan: document.getElementById('in-laporan').value
             };
 
@@ -1193,12 +1308,10 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
             const data = historyData[index];
             const url = document.getElementById('in-gsheet-url').value;
             
-            // Hapus dari interface aplikasi (Optimistic Delete)
             historyData.splice(index, 1);
             renderRiwayatTable();
             showToast("Data riwayat berhasil dihapus.", "success");
 
-            // Coba kirim perintah hapus ke Webhook Google Sheets (opsional)
             if (url) {
                 try {
                     const payload = { action: 'delete', timestamp: data.timestamp };
@@ -1224,7 +1337,6 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
                 }
             };
             
-            // Masukkan SEMUA data yang tersimpan, atau biarkan default/kosong
             setVal('in-kab', data.kab);
             setVal('in-kec', data.kec);
             setVal('in-desa', data.desa);
@@ -1243,11 +1355,17 @@ Demikian laporan hasil perjalanan dinas ini disusun dengan mengedepankan prinsip
             setVal('in-tglKembali', data.tglKembali);
             setVal('in-namaPgw1', data.p1Nama);
             setVal('in-jabatanPgw1', data.p1Jabatan);
-            setVal('in-namaPgw2', data.p2Nama);
-            setVal('in-jabatanPgw2', data.p2Jabatan);
             setVal('in-laporan', data.laporan);
 
-            toggleAN(); // Update UI berdasarkan Tipe Tanda Tangan
+            // Setup Pengikut dari data riwayat
+            document.getElementById('pengikut-container').innerHTML = '';
+            if (data.p2Nama || data.p2Jabatan) {
+                tambahPengikut(data.p2Nama || '', data.p2Jabatan || '');
+            } else {
+                tambahPengikut(); // Berikan 1 baris kosong jika riwayat tidak punya pengikut
+            }
+
+            toggleAN(); 
             updateDoc();
             closeRiwayat();
             showToast("Berhasil menarik riwayat ke formulir!", "success");
